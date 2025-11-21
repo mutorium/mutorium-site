@@ -7,43 +7,99 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 
 <!doctype html>
 <html lang="en">
-	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-	</head>
-	<body>
-		<Header />
-		<main>
-			<h1>🧑‍🚀 Hello, Astronaut!</h1>
-			<p>
-				Welcome to the official <a href="https://astro.build/">Astro</a> blog starter template. This
-				template serves as a lightweight, minimally-styled starting point for anyone looking to build
-				a personal website, blog, or portfolio with Astro.
-			</p>
-			<p>
-				This template comes with a few integrations already configured in your
-				<code>astro.config.mjs</code> file. You can customize your setup with
-				<a href="https://astro.build/integrations">Astro Integrations</a> to add tools like Tailwind,
-				React, or Vue to your project.
-			</p>
-			<p>Here are a few ideas on how to get started with the template:</p>
-			<ul>
-				<li>Edit this page in <code>src/pages/index.astro</code></li>
-				<li>Edit the site header items in <code>src/components/Header.astro</code></li>
-				<li>Add your name to the footer in <code>src/components/Footer.astro</code></li>
-				<li>Check out the included blog posts in <code>src/content/blog/</code></li>
-				<li>Customize the blog post page layout in <code>src/layouts/BlogPost.astro</code></li>
-			</ul>
-			<p>
-				Have fun! If you get stuck, remember to
-				<a href="https://docs.astro.build/">read the docs</a>
-				or <a href="https://astro.build/chat">join us on Discord</a> to ask questions.
-			</p>
-			<p>
-				Looking for a blog template with a bit more personality? Check out
-				<a href="https://github.com/Charca/astro-blog-template">astro-blog-template</a>
-				by <a href="https://twitter.com/Charca">Maxi Ferreira</a>.
-			</p>
-		</main>
-		<Footer />
-	</body>
+  <head>
+    <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+  </head>
+  <body>
+    <Header />
+    <main>
+      <section class="hero">
+        <h1>Mutorium Labs</h1>
+        <p class="tagline">
+          Mutation testing for Web3 &amp; zero-knowledge systems.
+        </p>
+        <p>
+          Mutorium explores how mutation testing can make smart contracts,
+          zk-circuits, and cryptographic protocols more robust. The goal:
+          help builders ship code that fails loudly in tests instead of
+          silently in production.
+        </p>
+        <div class="hero-actions">
+          <a href="/blog" class="button primary">Read the blog</a>
+          <a
+            href="https://github.com/mutorium"
+            class="button secondary"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Explore the tools
+          </a>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Why mutation testing?</h2>
+        <p>
+          Traditional tests tell you when something is broken. Mutation testing
+          asks a deeper question: <strong>would your tests notice if the code changed in subtle ways?</strong>
+        </p>
+        <ul>
+          <li>Inject small “mutants” into your code or circuits.</li>
+          <li>Run your existing test suite against them.</li>
+          <li>See which mutants survive &mdash; and where your tests are blind.</li>
+        </ul>
+      </section>
+
+      <section class="section">
+        <h2>What you’ll find here</h2>
+        <div class="feature-grid">
+          <article>
+            <h3>Learning</h3>
+            <p>
+              Gentle introductions to mutation testing, coverage, and testing
+              strategy for smart contracts and zk applications.
+            </p>
+          </article>
+          <article>
+            <h3>Research notes</h3>
+            <p>
+              Deep dives, experiments, and write-ups as we explore how mutation
+              testing maps to EVM, Noir, and other ecosystems.
+            </p>
+          </article>
+          <article>
+            <h3>Tools</h3>
+            <p>
+              Open-source utilities and prototypes for metrics, coverage, and
+              eventually full mutation testing pipelines.
+            </p>
+          </article>
+          <article>
+            <h3>Services</h3>
+            <p>
+              Over time, Mutorium will offer focused reviews and testing
+              engagements for teams that want to push quality further.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Stay in the loop</h2>
+        <p>
+          Follow along as the ideas, tools, and research around mutation testing
+          in Web3 and ZK evolve.
+        </p>
+        <ul>
+          <li>
+            X / Twitter: <a href="https://x.com/mutoriumlabs" target="_blank" rel="noreferrer">@MutoriumLabs</a>
+          </li>
+          <li>
+            GitHub: <a href="https://github.com/mutorium" target="_blank" rel="noreferrer">github.com/mutorium</a>
+          </li>
+        </ul>
+      </section>
+    </main>
+    <Footer />
+  </body>
 </html>
