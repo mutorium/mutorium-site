@@ -1,0 +1,39 @@
+---
+---
+
+<button
+	class="theme-toggle"
+	id="theme-toggle"
+	type="button"
+	aria-label="Toggle color theme"
+>
+	<span id="theme-toggle-label">Theme</span>
+</button>
+
+<script>
+	const root = document.documentElement;
+	const button = document.getElementById('theme-toggle');
+	const label = document.getElementById('theme-toggle-label');
+
+	if (button && label) {
+		const getCurrentTheme = () => root.dataset.theme || 'light';
+
+		const setTheme = (theme) => {
+			root.dataset.theme = theme;
+			try {
+				localStorage.setItem('theme', theme);
+			} catch (e) {
+				// ignore
+			}
+			label.textContent = theme === 'dark' ? 'Light' : 'Dark';
+		};
+
+		// Initialize label to current theme (set by BaseHead script)
+		setTheme(getCurrentTheme());
+
+		button.addEventListener('click', () => {
+			const next = getCurrentTheme() === 'dark' ? 'light' : 'dark';
+			setTheme(next);
+		});
+	}
+</script>

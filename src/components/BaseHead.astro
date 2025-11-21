@@ -1,6 +1,4 @@
 ---
-// Import the global.css file here so that it is included on
-// all pages through the use of the <BaseHead /> component.
 import '../styles/global.css';
 import type { ImageMetadata } from 'astro';
 import FallbackImage from '../assets/blog-placeholder-1.jpg';
@@ -20,6 +18,7 @@ const { title, description, image = FallbackImage } = Astro.props;
 <!-- Global Metadata -->
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="sitemap" href="/sitemap-index.xml" />
 <link
@@ -55,3 +54,25 @@ const { title, description, image = FallbackImage } = Astro.props;
 <meta property="twitter:title" content={title} />
 <meta property="twitter:description" content={description} />
 <meta property="twitter:image" content={new URL(image.src, Astro.url)} />
+
+<!-- Theme bootstrap: prefer stored theme, otherwise system preference -->
+<script is:inline>
+	(function () {
+		try {
+			const stored = localStorage.getItem('theme');
+			if (stored === 'light' || stored === 'dark') {
+				document.documentElement.dataset.theme = stored;
+				return;
+			}
+		} catch (e) {
+			// ignore, fall back to media query
+		}
+
+		if (window.matchMedia &&
+			window.matchMedia('(prefers-color-scheme: dark)').matches) {
+			document.documentElement.dataset.theme = 'dark';
+		} else {
+			document.documentElement.dataset.theme = 'light';
+		}
+	})();
+</script>

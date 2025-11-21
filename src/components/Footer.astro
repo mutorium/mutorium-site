@@ -25,24 +25,26 @@ const today = new Date();
 		</a>
 	</div>
 </footer>
+
 <style>
 	footer {
 		padding: 2em 1em 6em 1em;
-		background: linear-gradient(var(--gray-gradient)) no-repeat;
-		color: rgb(var(--gray));
+		background: var(--footer-bg);
+		color: var(--text-muted);
 		text-align: center;
+		border-top: 1px solid rgba(148, 163, 184, 0.18);
 	}
-	.social-links {
+	footer .social-links {
 		display: flex;
 		justify-content: center;
 		gap: 1em;
 		margin-top: 1em;
 	}
-	.social-links a {
+	footer .social-links a {
 		text-decoration: none;
-		color: rgb(var(--gray));
+		color: var(--text-muted);
 	}
-	.social-links a:hover {
-		color: rgb(var(--gray-dark));
+	footer .social-links a:hover {
+		color: var(--accent);
 	}
 </style>
