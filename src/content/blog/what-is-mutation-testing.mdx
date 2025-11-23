@@ -24,15 +24,15 @@ This post is a long-form introduction to mutation testing as a concept and a pra
 
 In simple terms:
 
-> Mutation testing changes your code in small ways and checks whether your test suite notices.[1]
+> Mutation testing changes your code in small ways and checks whether your test suite notices them.
 
 Each small change produces a **mutant** – a slightly modified version of your program. If your tests fail on that version, we say they **killed** the mutant. If all tests still pass, the mutant **survived**, which usually means your tests are missing something.
 
-Mutation testing is a **fault-based testing technique**: instead of only asking “did we execute this line?”, it asks “would our tests catch a realistic bug here?”. A widely used survey describes it as _“a fault-based technique that measures the adequacy of a test suite by the number of artificially seeded faults it can detect”_.[1]
+Mutation testing is a **fault-based testing technique**: instead of only asking “did we execute this line?”, it asks “would our tests catch a realistic bug here?”. A widely used survey describes it as _“a fault-based technique that measures the adequacy of a test suite by the number of artificially seeded faults it can detect”_.
 
 A practical definition that many tools adopt is roughly:
 
-> Mutation testing introduces changes to your code, then runs your unit tests against the changed code. It is expected that your unit tests will now fail.
+> Mutation testing introduces changes to your code and then runs your unit tests against the modified code. It is expected that your unit tests will now fail.
 
 If they don’t fail, your tests may not truly protect that behaviour.
 
@@ -42,10 +42,10 @@ If they don’t fail, your tests may not truly protect that behaviour.
 
 ### 2.1 Mutants and mutation operators
 
-Mutation testing is driven by **mutation operators** – simple rules that describe how to alter code. Examples for an imperative language include:[1,2]
+Mutation operators drive mutation testing – simple rules that describe how to alter code. Examples for an imperative language include:
 
 - Replace one arithmetic operator with another (`+` → `-`, `*` → `/`)
-- Flip relational operators (`>` → `>=`, `==` → `!=`)
+- Change relational operators (`>` → `>=`, `==` → `!=`)
 - Negate boolean conditions (`if cond` → `if !cond`)
 - Swap variables of compatible type
 - Delete or duplicate statements
@@ -53,7 +53,6 @@ Mutation testing is driven by **mutation operators** – simple rules that descr
 Each application of an operator at a particular location creates a **mutant**. In Rust, a simple example might start like this:
 
 ```rust
-// src/lib.rs
 pub fn is_adult(age: u32) -> bool {
     age >= 18
 }
@@ -62,7 +61,7 @@ pub fn is_adult(age: u32) -> bool {
 Some possible mutants of this function are:
 
 ```rust
-// Mutant 1 – flipped comparison
+// Mutant 1 – change comparison
 pub fn is_adult(age: u32) -> bool {
     age > 18
 }
@@ -85,13 +84,11 @@ The goal of your tests is to distinguish these mutants from the original behavio
 ### 2.2 Killing vs. surviving mutants
 
 For each mutant, the mutation testing tool:
-
 1. Builds the mutated version of the code  
 2. Runs your test suite  
 3. Observes the result  
-
-- If any test **fails**, the mutant is **killed**.
-- If **all tests pass**, the mutant **survives**.
+  - If any test **fails**, the mutant is **killed**.
+  - If **all tests pass**, the mutant **survives**.
 
 Surviving mutants point to gaps in your tests:
 
@@ -102,13 +99,13 @@ Surviving mutants point to gaps in your tests:
 
 ### 2.3 Mutation score
 
-The **mutation score** (or mutation adequacy score) is usually defined as:[1]
+The **mutation score** (or mutation adequacy score) is usually defined as:
 
 ```text
 mutation score = killed mutants / total non-equivalent mutants
 ```
 
-Equivalent mutants are those that, despite syntactic change, behave identically to the original program for all possible inputs. No test suite can kill them; dealing with them is one of the practical challenges of mutation testing.[1,2,4]
+Equivalent mutants are those that, despite syntactic change, behave identically to the original program for all possible inputs. No test suite can kill them; dealing with them is a practical challenge of mutation testing.
 
 A high mutation score usually means your tests are sensitive to realistic faults, not just “touching” lines of code.
 
@@ -119,7 +116,6 @@ A high mutation score usually means your tests are sensitive to realistic faults
 Imagine a simple function and a test module in Rust:
 
 ```rust
-// src/lib.rs
 pub fn discount(price: f64) -> f64 {
     if price >= 100.0 {
         price * 0.9 // 10% discount
@@ -176,7 +172,7 @@ Every mutant above would **survive** – not because the code is perfect, but be
 
 ## 4. Where did mutation testing come from?
 
-Mutation testing dates back to the **late 1970s**. Early work by DeMillo, Lipton, Sayward and others introduced the idea of using small, systematic program changes (mutations) to evaluate test data.[3] Around the same period and in the early 1980s, Budd and colleagues developed both theoretical foundations and practical systems for mutation analysis, including a PhD thesis and several influential papers.[4,5]
+Mutation testing dates back to the **late 1970s**. Early work by DeMillo, Lipton, Sayward, and others introduced the idea of using small, systematic program changes (mutations) to evaluate test data. Around the same period and in the early 1980s, Budd and colleagues developed both theoretical foundations and practical systems for mutation analysis, including a PhD thesis and several influential papers.
 
 Over time, this grew into a rich research area with:
 
@@ -184,25 +180,25 @@ Over time, this grew into a rich research area with:
 - Studies on how well mutation testing correlates with real bug detection  
 - Optimisations to reduce the cost of generating and running many mutants  
 
-Jia and Harman’s 2011 survey[1] and Papadakis et al.’s 2019 follow-up[2] provide detailed overviews of how the field evolved, including industrial-strength tools and open research questions.
+Jia and Harman’s 2011 survey and Papadakis et al.’s 2019 follow-up provide detailed overviews of how the field evolved, including industrial-strength tools and open research questions.
 
-Today, mutation testing is considered a mature technique in software testing research, with practical tools for Java, JavaScript, C#, and other ecosystems.[1,2]
+Today, mutation testing is considered a mature technique in software testing research, with practical tools for Rust, Java, JavaScript, C#, and other ecosystems.
 
-For some ecosystems (like Rust, Web3 smart contracts, and ZK circuits), mutation testing is still emerging, which is exactly the gap we’re interested in at Mutorium Labs.
+For some ecosystems (like Web3 smart contracts, and ZK circuits), mutation testing is still emerging, which is precisely the gap we’re interested in at Mutorium Labs.
 
 ---
 
 ## 5. The two key hypotheses
 
-Two classical ideas underpin mutation testing.[1–3,6]
+Two classical ideas underpin mutation testing.
 
 ### 5.1 Competent programmer hypothesis
 
 > Competent programmers write programs that are close to correct.
 
-“Close” here is about **behaviour**: the real bugs are often small deviations, not totally different algorithms.
+“Close” here refers to **behaviour**: the real bugs are often small deviations, not entirely different algorithms.
 
-Mutation operators therefore try to model **simple, realistic faults** a competent programmer might make:
+Mutation operators, therefore, try to model **simple, realistic faults** a competent programmer might make:
 
 - Boundary off-by-one errors  
 - Wrong comparison operator  
@@ -213,9 +209,9 @@ If your tests can catch these small faults, the hypothesis suggests they’re li
 
 ### 5.2 Coupling effect
 
-> Complex faults are coupled to simple faults in such a way that tests that detect all simple faults will detect most complex faults.[3,6]
+> Complex faults are coupled to simple faults in such a way that tests that detect all simple faults will detect most complex faults.
 
-In other words, by focusing on **simple mutants**, we indirectly get confidence against **more complex fault patterns**. This justifies using relatively small, single-change mutants instead of trying to enumerate every terrifying combination.
+In other words, by focusing on simple mutants, we indirectly gain confidence in handling more complex fault patterns. This justifies using relatively small, single-change mutants rather than enumerating every terrifying combination.
 
 ---
 
@@ -235,12 +231,12 @@ Mutation testing focuses on:
 - **Test quality**, not just presence  
 - **Meaningful coverage**: parts of the code that are reached _and_ strongly checked  
 
-That’s why mutation testing is often described as a way to **“test your tests”**.[1,2]
+That’s why mutation testing is often described as a way to **“test your tests”**.
 
 Coverage and mutation testing are complementary:
 
 - Coverage helps you find code that is never exercised.  
-- Mutation testing helps you find code that is exercised but not **properly tested**.
+- Mutation testing enables you to identify code that is exercised but not adequately tested.
 
 ---
 
@@ -267,7 +263,7 @@ If you have high mutation coverage, you can refactor internal implementations mo
 - As long as tests still pass and mutants stay killed, behaviour is preserved.  
 - If refactors accidentally weaken tests, mutation scores will drop.  
 
-Some tools and case studies explicitly position mutation testing as a safety net for refactoring and for maintaining test suites over time.[1,2]
+Some tools and case studies explicitly position mutation testing as a safety net for refactoring and for maintaining test suites over time.
 
 ---
 
@@ -277,7 +273,7 @@ Mutation testing is powerful but not free.
 
 ### 8.1 Computational cost
 
-Generating and running **thousands** of mutants means:[1,2]
+Generating and running **thousands** of mutants means:
 
 - Many compilations  
 - Many test runs  
@@ -296,7 +292,7 @@ You still need to budget time for mutation analysis in your CI / local workflow,
 
 ### 8.2 Equivalent mutants
 
-An **equivalent mutant** is one that, despite syntactic change, is semantically identical to the original program for all inputs.[1,2,4]
+An **equivalent mutant** is one that, despite syntactic change, is semantically identical to the original program for all inputs.
 
 Example: replacing `x * 2` with `x + x` may produce identical behaviour in many contexts.
 
@@ -304,7 +300,7 @@ Example: replacing `x * 2` with `x + x` may produce identical behaviour in many 
 - Detecting them automatically is generally undecidable.  
 - Tools use heuristics to minimise them, but some manual triage is often needed.  
 
-Equivalent mutants are a known pain point, but for many real-world projects the benefits outweigh the noise.
+Equivalent mutants are a known pain point, but for many real-world projects, the benefits outweigh the noise.
 
 ### 8.3 Human factor
 
@@ -318,25 +314,12 @@ This can be uncomfortable at first – but that’s exactly why the technique is
 
 ---
 
-## 9. The modern mutation testing ecosystem
-
-There are several widely used tools that bring mutation testing into everyday development, particularly in the JVM and JavaScript ecosystems.[1,2]
-
-- **PIT / PITest** – for Java and JVM languages; one of the most mature and widely adopted mutation testing tools in industry, with incremental mutation support and rich reports.  
-- **Stryker** – a family of mutation testing tools for JavaScript/TypeScript, C#, Scala and others, with a strong focus on developer experience and CI integration.  
-
-Various academic and commercial tools extend these ideas, add new operators, or integrate mutation testing into CI/CD pipelines.[2]
-
-For Rust, Web3, and ZK, the ecosystem is still forming – which is where Mutorium Labs comes in.
-
----
-
-## 10. How this relates to Web3 and ZK
+## 9. How this relates to Web3 and ZK
 
 In **Web3** and **zero-knowledge** contexts, bugs can be extremely costly:
 
 - Smart contracts often handle real value.  
-- ZK circuits encode cryptographic statements where tiny mistakes can break security or soundness.  
+- ZK circuits encode cryptographic statements, and even tiny mistakes can compromise security or soundness. 
 
 We already rely on:
 
@@ -353,15 +336,15 @@ Some examples of what mutation testing could look like here:
 
 - For a DeFi protocol: mutate interest rate formulas, fee calculations, or boundary checks and verify that tests (and invariants) fail.  
 - For a ZK circuit: mutate constraints (e.g. remove a check, flip an inequality) and check that test vectors and property tests catch the difference.  
-- For protocol logic: mutate serialization, message routing, or state transitions and see where tests are blind.  
+- For protocol logic: mutate serialization, message routing, or state transitions, and see where tests are blind.  
 
 This is where we see mutation testing as a powerful missing piece: a way to **pressure-test the test suites** that are supposed to protect users, protocols, and proofs.
 
 ---
 
-## 11. Reading a mutation testing report
+## 10. Reading a mutation testing report
 
-Different tools have different UIs, but most reports share common elements:[1,2]
+Different tools have different UIs, but most reports share common elements:
 
 - **Mutation score** – overall percentage of killed mutants  
 - **Per-file / per-class scores** – where your tests are strong or weak  
@@ -372,7 +355,7 @@ Different tools have different UIs, but most reports share common elements:[1,2]
 
 A practical workflow:
 
-1. **Start with survived mutants in critical modules.**  
+1. **Start with the surviving mutants in critical modules.**  
    - Are there missing tests?  
    - Are assertions too weak?  
 
@@ -389,7 +372,7 @@ A practical workflow:
 
 ---
 
-## 12. How mutation testing fits with other techniques
+## 11. How mutation testing fits with other techniques
 
 Mutation testing is **not** a replacement for:
 
@@ -410,11 +393,11 @@ Instead, it complements them:
 - Formal methods: “Is this property _provably_ true?”  
   Mutation: “Are our tests good enough for the properties we _don’t_ formally verify?”  
 
-Together, these approaches build a much stronger assurance story than any one of them alone.[1,2]
+Together, these approaches build a much stronger assurance story than any one of them alone.
 
 ---
 
-## 13. What’s next
+## 12. What’s next
 
 At **Mutorium Labs**, we’re convinced that mutation testing has a huge role to play in the future of Web3 and ZK security. This post was our baseline:
 
@@ -434,11 +417,11 @@ If you’re curious about mutation testing, or already experimenting with it in 
 
 ---
 
-## References
+## Further reading
 
-[1] Yue Jia and Mark Harman, “An Analysis and Survey of the Development of Mutation Testing,” _IEEE Transactions on Software Engineering_, 37(5), 2011, pp. 649–678. DOI: 10.1109/TSE.2010.62.  
-[2] Mike Papadakis, Marinos Kintis, Jie Zhang, Yue Jia, Yves Le Traon, Mark Harman, “Mutation Testing Advances: An Analysis and Survey,” in _Advances in Computers_, vol. 112, 2019, pp. 275–378. DOI: 10.1016/bs.adcom.2018.03.015.  
-[3] Richard A. DeMillo, Richard J. Lipton, Frederick G. Sayward, “Hints on Test Data Selection: Help for the Practicing Programmer,” _Computer_ 11(4), 1978, pp. 34–41. DOI: 10.1109/C-M.1978.218136.  
-[4] Timothy A. Budd, _Mutation Analysis of Program Test Data_, PhD thesis, Yale University, 1980.  
-[5] Timothy A. Budd, “Program testing by specification mutation,” _Computer Languages_, 10(1), 1985, pp. 63–73.  
-[6] For a discussion of the competent programmer hypothesis and coupling effect in practice, see e.g. Hagman, H., “A Comparison of Mutation Selection Methods,” 2012 (Master’s thesis), which summarises how these ideas are used in modern mutation testing research.
+- Yue Jia and Mark Harman, “An Analysis and Survey of the Development of Mutation Testing,” _IEEE Transactions on Software Engineering_, 37(5), 2011, pp. 649–678. DOI: 10.1109/TSE.2010.62.  
+- Mike Papadakis, Marinos Kintis, Jie Zhang, Yue Jia, Yves Le Traon, Mark Harman, “Mutation Testing Advances: An Analysis and Survey,” in _Advances in Computers_, vol. 112, 2019, pp. 275–378. DOI: 10.1016/bs.adcom.2018.03.015.  
+- Richard A. DeMillo, Richard J. Lipton, Frederick G. Sayward, “Hints on Test Data Selection: Help for the Practicing Programmer,” _Computer_ 11(4), 1978, pp. 34–41. DOI: 10.1109/C-M.1978.218136.  
+- Timothy A. Budd, _Mutation Analysis of Program Test Data_, PhD thesis, Yale University, 1980.  
+- Timothy A. Budd, “Program testing by specification mutation,” _Computer Languages_, 10(1), 1985, pp. 63–73.  
+- For a discussion of the competent programmer hypothesis and coupling effect in practice, see e.g. Hagman, H., “A Comparison of Mutation Selection Methods,” 2012 (Master’s thesis), which summarises how these ideas are used in modern mutation testing research.
