@@ -184,7 +184,14 @@ p {
 
 .prose p {
 	margin-bottom: 2em;
+	color: var(--text-main);
+
 }
+
+.prose li {
+	color: var(--text-main);
+}
+
 
 textarea {
 	width: 100%;
@@ -215,7 +222,10 @@ pre {
 	padding: 1.5em;
 	border-radius: 8px;
 	background-color: var(--code-bg);
+	font-size: 0.85em;
+	line-height: 1.6;
 }
+
 
 pre>code {
 	all: unset;
