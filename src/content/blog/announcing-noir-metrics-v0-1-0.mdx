@@ -1,0 +1,261 @@
+---
+title: "Announcing noir-metrics v0.1.0"
+description: "Source code metrics for Noir/Nargo projects, with JSON output designed for tooling, audits, and future mutation testing."
+pubDate: "2025-11-25"
+updatedDate: "2025-11-25"
+tags: ["noir", "rust", "metrics", "tooling", "mutation testing"]
+draft: false
+heroImage: '../../assets/noir_metrics_announcement.png'
+---
+
+Noir now has a small but important new helper in its toolbox: **`noir-metrics` v0.1.0**.
+
+`noir-metrics` is a Rust CLI and library that scans a Nargo project, walks all your `.nr` files, and produces source code metrics that are actually tuned for Noir: line stats, test surface, function counts, and more — all exposed as both human-readable output and a versioned JSON schema that other tools can consume.
+
+This is the first building block in Mutorium Labs’ longer-term plan to bring **coverage and mutation testing** tooling to the Noir ecosystem.
+
+---
+
+## Why metrics for Noir?
+
+If you’ve worked with Solidity, you may have come across tools like Solidity Metrics, which generate rich reports about line counts, comments, exposed functions, and risk profiles for contracts.
+
+In the Rust world, tools like `cargo-tarpaulin` give you detailed coverage reports for your tests and can export machine-readable formats for further analysis.
+
+Until now, Noir didn’t really have an equivalent for **basic source metrics**:
+
+- How many lines of Noir do we actually have in this project?
+- How much of that is tests vs non-test code?
+- How many functions and entrypoints exist across the codebase?
+- Which files look like tests vs application logic?
+
+Those are simple questions, but in practice you end up hacking together `wc -l`, grep, and editor plugins every time — and none of that understands Noir’s conventions or test attributes.
+
+`noir-metrics` aims to fill that gap for Noir/Nargo projects.
+
+---
+
+## What `noir-metrics` v0.1.0 does today
+
+At a high level, `noir-metrics`:
+
+- Locates a Noir project by looking for `Nargo.toml`
+- Recursively walks all `.nr` files
+- Computes per-file metrics and project-level totals
+- Prints either a human-readable summary or a JSON report with a versioned schema
+
+### Current metrics
+
+For each file (and aggregated totals), v0.1.0 tracks:
+
+- **Line statistics**
+  - total lines
+  - blank lines
+  - comment lines (`//` and `/* ... */`)
+  - “code” lines (everything else)
+
+- **Test surface**
+  - number of test functions (anything annotated with `#[test]`, `#[test(should_fail)]`, or other `#[test(...)]` forms)
+  - approximate lines of test code vs non-test code
+  - a heuristic `is_test_file` flag based on paths like `tests/` or filenames ending with `_test.nr`
+
+- **Function surface**
+  - total functions
+  - `pub` functions
+  - non-test functions
+  - whether a file defines a `main` and how many files in the project have one
+
+- **Inline documentation signals**
+  - a simple `todo_count` for TODO/FIXME markers in comments or code
+
+The goal is **not** to perfectly parse Noir’s full AST (yet). It’s a fast, line-based analyzer with Noir-aware heuristics — cheap enough to run in CI on every pull request while still useful for humans, auditors, and higher-level tooling.
+
+---
+
+## Installing and running the CLI
+
+From crates.io:
+
+```bash
+cargo install noir-metrics
+```
+
+This installs a `noir-metrics` binary into your Cargo bin directory.
+
+Run it in any directory that contains a `Nargo.toml`:
+
+```bash
+# Human-readable summary
+noir-metrics .
+
+# JSON output to stdout
+noir-metrics . --json
+
+# JSON output to stdout and to a file
+noir-metrics . --json --output metrics.json
+```
+
+Useful flags:
+
+- `PROJECT_ROOT` (positional): path to the Noir project (default: `.`)
+- `--json`: switch from text to JSON output
+- `--output <PATH>`: also write JSON to a file
+- `-v, --verbose`: print additional debug info
+
+This makes it easy to:
+
+- Drop a quick metrics snapshot into a PR description
+- Store `metrics.json` as a build artifact
+- Feed metrics into other scripts or dashboards
+
+---
+
+## JSON output and schema versioning
+
+When you run with `--json`, `noir-metrics` emits a document shaped roughly like this:
+
+```json
+{
+  "tool": {
+    "name": "noir-metrics",
+    "version": "0.1.0",
+    "schema_version": 1
+  },
+  "project_root": "path/to/project",
+  "totals": {
+    "files": 2,
+    "code_lines": 27,
+    "test_functions": 3,
+    "test_code_percentage": 44.44
+  },
+  "files": [
+    {
+      "path": "src/main.nr",
+      "is_test_file": false,
+      "code_lines": 15,
+      "test_functions": 1,
+      "has_main": true
+    }
+  ]
+}
+```
+
+The important bit is the **`tool.schema_version`** field:
+
+- The same value is exposed as a Rust constant `JSON_SCHEMA_VERSION`
+- It will be bumped when there are breaking changes to the JSON structure
+- New, additive fields can appear without increasing the schema version
+
+That means other tools (like future coverage or mutation-testing engines) can:
+
+- Assert on `schema_version`
+- Safely parse known fields
+- Ignore unknown fields when `schema_version` stays the same
+
+---
+
+## Using `noir-metrics` as a library
+
+`noir-metrics` is also available as a regular Rust dependency, so you can embed metrics directly into your own tools, services, or CLIs.
+
+Add it to your `Cargo.toml`:
+
+```toml
+[dependencies]
+noir-metrics = "0.1"
+```
+
+And use the library API:
+
+```rust
+use noir_metrics::{analyze_path, MetricsReport};
+use std::path::Path;
+
+fn run_metrics(root: &Path) -> anyhow::Result<MetricsReport> {
+    let report = analyze_path(root)?;
+    println!("Total code lines: {}", report.totals.code_lines);
+    Ok(report)
+}
+```
+
+Exported types in v0.1.0:
+
+- `analyze_path(&Path) -> Result<MetricsReport>`
+- `MetricsReport` (root path, project totals, per-file metrics)
+- `ProjectTotals`
+- `FileMetrics`
+- `NoirProject` (re-export of the internal project model)
+- `JSON_SCHEMA_VERSION` (for consumers of the JSON schema)
+
+If you’re building Noir-aware tooling in Rust — linters, dashboards, custom CI checks — you can plug `analyze_path` straight in.
+
+---
+
+## How this ties into coverage & mutation testing
+
+Mutorium Labs’ long-term focus is to bring **first-class mutation testing** to Web3 and ZK: tools that deliberately mutate your circuits or smart contracts to test how strong your test suite really is.
+
+For Noir, that journey will likely involve:
+
+- Understanding **how big** a project is (lines, functions, test footprint)
+- Tracking **how much code** is considered tests vs non-tests
+- Combining metrics with execution traces and coverage data
+- Prioritising which parts of the circuit surface to mutate first
+
+`noir-metrics` is the first step in that pipeline. It gives us a consistent, machine-readable description of a Noir codebase that other tools — including future mutation-testing engines — can rely on.
+
+---
+
+## Roadmap and future ideas
+
+v0.1.0 is intentionally small and focused. Some directions we’re exploring next:
+
+- **Control-flow and complexity**
+  - Counts of `if`/`match`/loop constructs
+  - Basic complexity indicators (e.g. per-function branching)
+
+- **More Noir-specific metrics**
+  - Constraint and assert “density”
+  - Better separation between public entrypoints and internal helpers
+
+- **Configuration and filtering**
+  - Include/exclude patterns (`--exclude target`, vendor directories, generated code, etc.)
+
+- **Deeper Noir integration**
+  - Potential `nargo metrics` subcommand that reuses this crate under the hood
+
+If you have ideas for metrics that would help your team (or your audits), please open an issue or share an example project on GitHub.
+
+---
+
+## Status: early 0.1, feedback very welcome
+
+`noir-metrics` v0.1.0 is **early and under active development**. The JSON schema is versioned, but we still reserve the right to introduce breaking changes before 1.0.0 as we learn from real projects and use cases.
+
+If you try it out on your Noir project and something looks off — a metric feels misleading, a file is mis-classified, or you’re missing a number you care about — please:
+
+- Open an issue on GitHub
+- Share your project layout (or a minimal repro)
+- Tell us what you’d like to measure
+
+---
+
+## Getting started
+
+- **Crate:** https://crates.io/crates/noir-metrics
+- **Source:** https://github.com/mutorium/noir-metrics
+
+If you’re building on Noir and you care about test quality, audits, or just want to get a better feel for your project size and test footprint, we’d love for you to give `noir-metrics` a spin.
+
+This is just v0.1 — but it’s the first concrete step towards a richer ecosystem of **metrics, coverage, and mutation testing tooling for Noir**.
+
+---
+
+## References
+
+- Noir – The Programming Language for Private Apps  
+- Noir Documentation  
+- `noir-metrics` GitHub repository  
+- `noir-metrics` crate on crates.io  
+- ConsenSys Diligence – Solidity Metrics  
+- `cargo-tarpaulin` – Code coverage tool for Rust  
