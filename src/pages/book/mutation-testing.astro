@@ -1,5 +1,4 @@
 ---
-import "../../styles/global.css";
 import BaseHead from "../../components/BaseHead.astro";
 import Header from "../../components/Header.astro";
 import Footer from "../../components/Footer.astro";
@@ -18,40 +17,38 @@ const pageDescription =
             description={pageDescription || SITE_DESCRIPTION}
         />
     </head>
-
     <body>
         <Header />
+        <main>
+            <section class="hero">
+                <h1>{pageTitle}</h1>
+                <p class="tagline">
+                    A programmer-focused book on mutation testing – from
+                    fundamentals to Rust, Solidity, and ZK circuits.
+                </p>
+                <p>
+                    This is a <strong>work in progress</strong>. Chapters will
+                    be published as blog posts first. Once more content is live,
+                    this page will become a proper table of contents.
+                </p>
+            </section>
 
-        <main
-            style="width:960px;max-width:calc(100% - 2rem);margin:0 auto;padding:3rem 1rem 4rem;"
-        >
-            <h1>{pageTitle}</h1>
-            <p>
-                This is a <strong>work in progress</strong>. The goal is to
-                build a programmer-focused book on mutation testing – from
-                fundamentals to Rust, Solidity, and ZK circuits.
-            </p>
-            <p>
-                Chapters will be published as blog posts first. Once more
-                content is live, this page will become a proper table of
-                contents.
-            </p>
-
-            <h2>Published chapters</h2>
-            <ul>
-                <li>
-                    <a href="/blog/what-is-mutation-testing/">
-                        What Is Mutation Testing?
-                    </a>
-                </li>
-                <li>
-                    <a href="/blog/swiss-cheese-model-of-web3/">
-                        Swiss Cheese Model of Web3 Security
-                    </a>
-                </li>
-            </ul>
+            <section class="section">
+                <h2>Published chapters</h2>
+                <ul>
+                    <li>
+                        <a href="/blog/what-is-mutation-testing/">
+                            What Is Mutation Testing?
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/blog/swiss-cheese-model-of-web3/">
+                            Swiss Cheese Model of Web3 Security
+                        </a>
+                    </li>
+                </ul>
+            </section>
         </main>
-
         <Footer />
     </body>
 </html>
