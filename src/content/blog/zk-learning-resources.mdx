@@ -1,0 +1,191 @@
+---
+title: "Zero-Knowledge Proofs: A Practical Learning Path"
+description: "The ZK resources that actually helped me learn – from intuition to protocols, courses, and real-world applications."
+pubDate: "2025-11-30"
+updatedDate: "2025-11-30"
+tags: ["zero-knowledge", "resources", "learning-path"]
+draft: false
+heroImage: "../../assets/zk-learning-resources.png"
+---
+
+This is not a complete list of everything in the zero-knowledge universe.
+
+Instead, it’s an **opinionated map** of resources that I personally found helpful on my journey – especially as an engineer coming from Web3 / smart contracts who wanted to really *understand* ZK.
+
+I’ve grouped things roughly by “where you are” in your journey.
+
+---
+
+### 1. Fundamentals & intuition (no heavy math required)
+
+If you’re new to ZK, these are perfect “first-contact” resources. They focus on intuition and story before dropping you into full protocol details.
+
+- **Zero Knowledge Proofs: An Illustrated Primer – Matthew Green**  
+  Story-style introduction to ZK with great analogies and pictures.  
+  [blog.cryptographyengineering.com/zero-knowledge-proofs-illustrated-primer](https://blog.cryptographyengineering.com/2014/11/27/zero-knowledge-proofs-illustrated-primer/)
+
+- **A Non-Mathematical Introduction to Zero Knowledge Proof – krinza.eth**  
+  Short, accessible ZK primer that assumes you *don’t* love algebra and still want to “get it”.  
+  [mirror.xyz/krinza.eth/non-mathematical-introduction-to-zero-knowledge-proof](https://mirror.xyz/krinza.eth/5_Cr91cBK3XdkeHPQ9yjc7z_4NoTNxyqBiM4Jz4d5VE)
+
+- **Zero-Knowledge Proofs for Engineers – Dark Forest blog**  
+  ZK explained from the perspective of building a real game. Great if you think in systems and code.  
+  - Part I – intro to zkSNARKs: [blog.zkga.me/intro-to-zksnarks](https://blog.zkga.me/intro-to-zksnarks)  
+  - Part II – Dark Forest circuits: [blog.zkga.me/df-init-circuit](https://blog.zkga.me/df-init-circuit)
+
+These alone are enough to give you a solid “mental model” of what zero-knowledge proofs are and when they’re useful.
+
+---
+
+### 2. Deeper theory: when you’re ready for polynomials & commitments
+
+Once the basics click, you’ll eventually want to understand *why* zk-SNARKs and zk-STARKs work under the hood.
+
+- **Zero-Knowledge Book (ZK Book) – RareSkills**  
+  A structured, book-length path from abstract algebra to actually building a zk-SNARK from scratch, very engineer-focused.  
+  [rareskills.io/zk-book](https://www.rareskills.io/zk-book)
+
+- **The MoonMath Manual to zk-SNARKs – Least Authority**  
+  A full reference-style manual for zk-SNARKs. Great as a companion when you want more detail on the math and constructions.  
+  [leastauthority.com/moonmath-manual](https://leastauthority.com/community-matters/moonmath-manual/)
+
+- **Vitalik Buterin’s blog posts on SNARKs & STARKs**  
+  Amazing for connecting theory with protocol design and trade-offs:
+  - *Quadratic Arithmetic Programs: From Zero to Hero*  
+    [medium.com/@VitalikButerin/quadratic-arithmetic-programs-from-zero-to-hero](https://medium.com/@VitalikButerin/quadratic-arithmetic-programs-from-zero-to-hero-f6d558cea649)
+  - *Exploring Elliptic Curve Pairings*  
+    [medium.com/@VitalikButerin/exploring-elliptic-curve-pairings](https://medium.com/@VitalikButerin/exploring-elliptic-curve-pairings-c73c1864e627)
+  - *zk-SNARKs: Under the Hood*  
+    [medium.com/@VitalikButerin/zk-snarks-under-the-hood](https://medium.com/@VitalikButerin/zk-snarks-under-the-hood-b33151a013f6)
+
+If you work through the RareSkills ZK Book + MoonMath and dip into Vitalik’s posts when you hit new concepts, you’ll have a very strong foundation.
+
+---
+
+### 3. Whiteboards & concept deep dives
+
+If you prefer to learn by watching someone talk and draw, these are gold.
+
+#### ZK Hack – whiteboard sessions
+
+Video series that walks through core ZK building blocks step by step: from “What is a SNARK?” to PLONK, lookup arguments, zkVMs and zk-rollups.
+
+- ZK Whiteboard Sessions: [zkhack.dev/whiteboard](https://zkhack.dev/whiteboard/)
+
+Great “commute learning” or “evening with a notebook” content.
+
+#### 0xPARC – applied ZK learning tracks
+
+Hands-on learning tracks for specific stacks:
+
+- Halo2 track: [learn.0xparc.org/halo2](https://learn.0xparc.org/halo2/)  
+- Circom track: [learn.0xparc.org](https://learn.0xparc.org/)
+
+These walk you through building circuits in practice, not just reading about them.
+
+---
+
+### 4. Structured courses & programs
+
+If you like full courses rather than stitching together blog posts:
+
+- **Zero Knowledge Proofs MOOC (zk-learning.org)**  
+  A full MOOC with lectures, notes and exercises covering modern ZKP theory and practice.  
+  [zk-learning.org](https://zk-learning.org/)
+
+- **MIT IAP – Modern Zero Knowledge Cryptography**  
+  Course focused on modern ZK crypto, with lectures, problem sets, and suggested projects.  
+  [zkiap.com](https://zkiap.com/)
+
+- **BIU Winter School on Cryptography – Zero Knowledge**  
+  Multi-day winter school focused entirely on ZK, with lecture videos and materials.  
+  (Linked from the Awesome Zero-Knowledge Proofs list.)  
+  [cyber.biu.ac.il/event/the-9th-biu-winter-school-on-cryptography](https://cyber.biu.ac.il/event/the-9th-biu-winter-school-on-cryptography/)
+
+You don’t need to do all of these. Picking **one main structured course** plus the books/resources above is usually more than enough.
+
+---
+
+### 5. Hands-on circuits & frameworks
+
+At some point, you need to actually write circuits and generate proofs.
+
+Here are good places to start:
+
+- **Circom + snarkJS tutorials**  
+  Circom is one of the most widely used circuit languages. The original tutorial plus community examples are still a very good starting point.  
+  - Circom tutorial: [github.com/iden3/circom_old/blob/master/TUTORIAL.md](https://github.com/iden3/circom_old/blob/master/TUTORIAL.md)  
+  - Rollup tutorial (Circom + snarkJS): [github.com/therealyingtong/roll_up_circom_tutorial](https://github.com/therealyingtong/roll_up_circom_tutorial)
+
+- **Halo2**  
+  If you want to get closer to the protocol and work with a PLONK-ish, proof-system-oriented stack, the 0xPARC Halo2 track is a great entry point:  
+  [learn.0xparc.org/halo2](https://learn.0xparc.org/halo2/)
+
+- **Noir**  
+  A modern, developer-friendly language for writing ZK circuits with a strong tooling focus and good ergonomics.  
+  [noir-lang.org](https://noir-lang.org/)
+
+Pick a stack (Circom, Halo2, Noir, …), build a few circuits, and *debug them*. That experience changes how you read the more theoretical resources.
+
+---
+
+### 6. Podcasts & “stay up to date” streams
+
+ZK moves fast. These help you stay in the loop.
+
+- **Zero Knowledge Podcast**  
+  Long-form conversations with researchers, protocol teams, and builders across the ZK ecosystem.  
+  [zeroknowledge.fm](https://zeroknowledge.fm/)
+
+- **Zero Knowledge Podcast YouTube**  
+  If you prefer video / YouTube playlists:  
+  [youtube.com/@zeroknowledgefm](https://www.youtube.com/@zeroknowledgefm)
+
+- **ZK Hack**  
+  In addition to the whiteboard sessions, ZK Hack runs hackathons, workshops and publishes blogs.  
+  [zkhack.dev](https://zkhack.dev/)
+
+Listening to these regularly gives you a feel for what people are *actually* building, which research directions are hot, and which tools are maturing.
+
+---
+
+### 7. Applications & inspiration
+
+Sometimes you just need to see real-world use cases to stay motivated.
+
+- **Dark Forest – zkSNARK-powered strategy game**  
+  One of the best examples of ZK used for gameplay, not just finance.  
+  [blog.zkga.me](https://blog.zkga.me/)
+
+- **ZK Email – zero-knowledge proofs over emails**  
+  Prove properties about your email (domain, content, etc.) in-circuit without exposing the underlying data.  
+  Website: [zk.email](https://zk.email/)  
+  GitHub org: [github.com/zkemail](https://github.com/zkemail)
+
+- **awesome-zkml – ZK for machine learning**  
+  A curated list of ZK + ML projects and resources.  
+  [github.com/worldcoin/awesome-zkml](https://github.com/worldcoin/awesome-zkml)
+
+Exploring these projects is a good way to answer the question: *“Okay, but what can I actually build with ZK?”*
+
+---
+
+### 8. More curated lists
+
+This page is intentionally small and opinionated.
+
+If you want a much broader directory of papers, implementations, and systems, check out:
+
+- **awesome-zero-knowledge-proofs** (the list this page was partially inspired by)  
+  [github.com/matter-labs/awesome-zero-knowledge-proofs](https://github.com/matter-labs/awesome-zero-knowledge-proofs)
+
+- **zkp.science – ZK papers & library index**  
+  [zkp.science](https://zkp.science)
+
+- **ZKProof educational resources**  
+  Community-maintained list of courses, talks, papers, tools, and exercises:  
+  [docs.zkproof.org/edu](https://docs.zkproof.org/edu)
+
+---
+
+If you use this page as a rough learning path – from fundamentals to deeper theory, then into one concrete stack and real applications – you’ll be in a very good position to understand and build serious ZK systems.
