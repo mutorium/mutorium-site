@@ -1,0 +1,320 @@
+---
+import BaseHead from "../../components/BaseHead.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import { SITE_TITLE, SITE_DESCRIPTION } from "../../consts";
+
+const pageTitle = "Mutation Testing Resources";
+const pageDescription =
+    "A curated selection of mutation testing tools, papers, and talks – with extra focus on Rust and Solidity.";
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <BaseHead
+            title={`${pageTitle} | ${SITE_TITLE}`}
+            description={pageDescription || SITE_DESCRIPTION}
+        />
+    </head>
+    <body>
+        <Header />
+        <main>
+            <section class="hero">
+                <h1>{pageTitle}</h1>
+                <p class="tagline">
+                    A hand-picked “best of” mutation testing – focused on
+                    high-signal tools and learning resources rather than an
+                    exhaustive list.
+                </p>
+                <p>
+                    This page is curated by Mutorium Labs and built on top of
+                    the community-maintained{" "}
+                    <a
+                        href="https://github.com/theofidry/awesome-mutation-testing"
+                        target="_blank"
+                        rel="noreferrer"
+                    >
+                        Awesome Mutation Testing
+                    </a>{" "}
+                    list. If you want everything, go there. If you want a guided
+                    path, start here.
+                </p>
+            </section>
+
+            <section class="section">
+                <h2>Core introductions</h2>
+                <ul>
+                    <li>
+                        <a
+                            href="https://testing.googleblog.com/2021/04/mutation-testing.html"
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            Mutation Testing (Google Testing Blog, 2021)
+                        </a>{" "}
+                        – short, practical explanation of why a large engineering
+                        org uses mutation testing and what it changes in day-to-day
+                        development.
+                    </li>
+                    <li>
+                        <a
+                            href="https://www.thegreenreport.blog/articles/the-power-of-mutation-testing/the-power-of-mutation-testing.html"
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            The Power of Mutation Testing (2024)
+                        </a>{" "}
+                        – modern, readable overview of concepts and benefits.
+                    </li>
+                    <li>
+                        <a
+                            href="https://github.com/theofidry/awesome-mutation-testing#publications"
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            Publications section of Awesome Mutation Testing
+                        </a>{" "}
+                        – if you want the full academic background, start here.
+                    </li>
+                </ul>
+            </section>
+
+            <section class="section">
+                <h2>Rust</h2>
+                <p>
+                    Our main language focus. These are the tools we consider
+                    most relevant if you write or study Rust code.
+                </p>
+                <ul>
+                    <li>
+                        <a
+                            href="https://github.com/sourcefrog/cargo-mutants"
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            cargo-mutants
+                        </a>{" "}
+                        – source-level mutation testing for Rust. Mutates your code
+                        and re-runs <code>cargo test</code>. Great reference for
+                        CLI design, operator choices, and JSON outputs.
+                    </li>
+                    <li>
+                        <a
+                            href="https://github.com/llogiq/mutagen"
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            mutagen
+                        </a>{" "}
+                        – experimental mutation testing for Rust using attributes.
+                        Interesting for exploring alternative operator and integration
+                        strategies.
+                    </li>
+                    <li>
+                        <a
+                            href="https://github.com/theofidry/awesome-mutation-testing#rust"
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            Rust section in Awesome Mutation Testing
+                        </a>{" "}
+                        – for more context and related links.
+                    </li>
+                </ul>
+            </section>
+
+            <section class="section">
+                <h2>Solidity &amp; smart contracts</h2>
+                <p>
+                    Smart contracts are a natural fit for mutation testing:
+                    small programs, high stakes. These are the key tools to
+                    know.
+                </p>
+                <ul>
+                    <li>
+                        <a
+                            href="https://github.com/Certora/gambit"
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            Certora/gambit
+                        </a>{" "}
+                        – a mutation system for Solidity used to evaluate both tests
+                        and formal verification specifications.
+                    </li>
+                    <li>
+                        <a
+                            href="https://github.com/RareSkills/vertigo-rs"
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            RareSkills/vertigo-rs
+                        </a>{" "}
+                        – actively maintained Rust implementation of Vertigo with
+                        Foundry support. Mutates contracts and runs{" "}
+                        <code>forge test</code> to produce a mutation score.
+                    </li>
+                    <li>
+                        <a
+                            href="https://github.com/JoranHonig/vertigo"
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            JoranHonig/vertigo
+                        </a>{" "}
+                        – original Vertigo tool for mutation testing of smart contracts.
+                    </li>
+                    <li>
+                        <a
+                            href="https://rareskills.io/post/solidity-mutation-testing"
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            Solidity Mutation Testing (RareSkills)
+                        </a>{" "}
+                        – practical overview of how Solidity mutation tools work
+                        and where they fit into a security workflow.
+                    </li>
+                </ul>
+            </section>
+
+            <section class="section">
+                <h2>Key papers (short list)</h2>
+                <p>
+                    For a deeper understanding, these are good entry points from
+                    the much longer bibliography in Awesome Mutation Testing.
+                </p>
+                <ul>
+                    <li>
+                        A general survey such as{" "}
+                        <em
+                            >Mutation Testing Advances: An Analysis and Survey</em
+                        >{" "}
+                        – covers core ideas, operators, and research directions.
+                    </li>
+                    <li>
+                        An empirical study like{" "}
+                        <em
+                            >Are Mutants a Valid Substitute for Real Faults in
+                            Software Testing?</em
+                        > – addresses how well mutants approximate real bugs.
+                    </li>
+                    <li>
+                        A smart-contract–focused work such as{" "}
+                        <em
+                            >RegularMutator: A Mutation Testing Tool for
+                            Solidity Smart Contracts</em
+                        > – shows how mutation operators look in the Solidity domain.
+                    </li>
+                    <li>
+                        For more, see the{" "}
+                        <a
+                            href="https://github.com/theofidry/awesome-mutation-testing#publications"
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            Publications
+                        </a>{" "}
+                        section and follow the citation chains.
+                    </li>
+                </ul>
+            </section>
+
+            <section class="section">
+                <h2>Talks &amp; videos</h2>
+                <p>
+                    If you prefer to see mutation testing in action, these are
+                    good starting talks.
+                </p>
+                <ul>
+                    <li>
+                        <a
+                            href="https://www.youtube.com/watch?v=LoFJajoJQ2g"
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            GOTO 2019 – Making Mutants Work for You (Henry
+                            Coles)
+                        </a>{" "}
+                        – live demos and a clear explanation of why mutation testing
+                        improves test suites.
+                    </li>
+                    <li>
+                        <a
+                            href="https://www.youtube.com/watch?v=jwB3Nn4hR1o"
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            GOTO 2015 – Mutation Testing in Python (Austin
+                            Bingham)
+                        </a>{" "}
+                        – language-specific, but great for understanding general
+                        concepts and tooling.
+                    </li>
+                    <li>
+                        More links are under{" "}
+                        <a
+                            href="https://github.com/theofidry/awesome-mutation-testing#blogsposts"
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            Blogs/Posts
+                        </a>{" "}
+                        and{" "}
+                        <a
+                            href="https://github.com/theofidry/awesome-mutation-testing#videos"
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            Videos
+                        </a>{" "}
+                        in the Awesome list.
+                    </li>
+                </ul>
+            </section>
+
+            <section class="section">
+                <h2>From Mutorium Labs</h2>
+                <p>
+                    These are our own resources that build on the tools and
+                    papers above, especially in the context of Web3 and ZK.
+                </p>
+                <ul>
+                    <li>
+                        <a href="/blog/what-is-mutation-testing/">
+                            What Is Mutation Testing? A Practical Introduction
+                        </a>{" "}
+                        – our long-form explanation of the concept, aimed at practitioners.
+                    </li>
+                    <li>
+                        <a href="/blog/swiss-cheese-model-of-web3/">
+                            Swiss Cheese Model of Web3 Security
+                        </a>{" "}
+                        – how mutation testing fits into a layered defence model
+                        for smart contracts and ZK systems.
+                    </li>
+                    <li>
+                        <a href="/book/">
+                            The Mutorium Labs Book of Mutation Testing
+                        </a>{" "}
+                        – a living, programmer-focused book; chapters are published
+                        as blog posts first.
+                    </li>
+                    <li>
+                        <a
+                            href="https://github.com/mutorium/noir-metrics"
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            noir-metrics (GitHub)
+                        </a>{" "}
+                        – metrics for Noir/Nargo projects, forming the basis for
+                        future coverage and mutation testing work on ZK circuits.
+                    </li>
+                </ul>
+            </section>
+        </main>
+        <Footer />
+    </body>
+</html>
