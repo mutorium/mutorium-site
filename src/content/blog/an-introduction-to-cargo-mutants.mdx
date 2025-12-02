@@ -1,0 +1,566 @@
+---
+title: "An Introduction to cargo-mutants: Mutation Testing for Rust"
+description: "What cargo-mutants is, how it works, and how to use it to find inadequately-tested Rust code."
+pubDate: "2025-12-02"
+updatedDate: "2025-12-02"
+tags: ["rust", "testing", "mutation testing", "cargo-mutants", "mutorium labs"]
+draft: false
+heroImage: '../../assets/cargo_mutants_banner.png'
+---
+
+Mutation testing is a technique in which you deliberately introduce small bugs into your code and then run your test suite to see whether any tests fail.
+
+If the tests pass even with the bug in place, that mutant **survives**.  
+A surviving mutant points at behavior that is not actually constrained by your tests.
+
+For Rust, one of the tools in this space is **<a href="https://mutants.rs/" target="_blank" rel="noopener noreferrer">cargo-mutants</a>**
+ – a mutation testing runner that plugs directly into `cargo test`. This post gives a practical overview of:
+
+- what `cargo-mutants` is and how it works
+- how to run it on a small Rust crate
+- what kinds of mutants it generates
+- how its reports are structured
+- where it fits into a broader testing strategy
+
+---
+
+## 1. What is cargo-mutants?
+
+`cargo-mutants` is a command-line tool that:
+
+- **generates mutants** (small changes) in your Rust source
+- **rebuilds** the project for each mutant
+- **runs your tests**
+- tells you which mutants were **caught** (tests failed) and which **survived** (tests still passed)
+
+You use it as a `cargo` subcommand, so it fits naturally into existing Rust workflows:
+
+```bash
+cargo install --locked cargo-mutants
+cargo mutants
+```
+
+Under the hood, it:
+
+- uses `cargo metadata` to discover packages and targets
+- parses Rust code with `syn` to find functions and expressions to mutate
+- copies your project into a **scratch directory**
+- runs a **baseline** `cargo test` there to ensure tests pass
+- applies each mutation in turn and re-runs the tests
+
+The goal is to find **inadequately tested** code – places where tests don’t really care about what the code does.
+
+---
+
+## 2. Basic workflow: install and first run
+
+### 2.1 Installation
+
+From the docs’ installation section:
+
+```bash
+cargo install --locked cargo-mutants
+```
+
+The `--locked` flag ensures that the dependencies of `cargo-mutants` are taken from its own `Cargo.lock`, giving reproducible builds.
+
+After that, you can verify the installation with:
+
+```bash
+cargo mutants --version
+```
+
+### 2.2 Running on a crate
+
+In any Rust crate directory:
+
+```bash
+cargo mutants
+```
+
+By default, this will:
+
+1. Make a copy of your project in a temporary build directory.
+2. Run `cargo test` there once as a **baseline**.
+3. Generate a set of mutants and, for each:
+   - patch the copy
+   - run `cargo test`
+   - record whether tests failed (mutant **caught**) or passed (mutant **missed**)
+
+The default output includes:
+
+- a short baseline summary
+- a list of missed/unviable mutants (if any)
+- and a final line like:
+
+```text
+9 mutants tested in 2s: 9 caught
+```
+
+---
+
+## 3. Example crate: a low-pass filter and a helper function
+
+To make this concrete, let’s look at a minimal example crate.
+
+Create a new library:
+
+```bash
+cargo new --lib cargo_mutants_lab
+cd cargo_mutants_lab
+```
+
+`src/lib.rs`:
+
+```rust
+pub struct LowPassFilter {
+    threshold: i32,
+}
+
+impl LowPassFilter {
+    pub fn new(threshold: i32) -> Self {
+        Self { threshold }
+    }
+
+    pub fn allows(&self, value: i32) -> bool {
+        value < self.threshold
+    }
+}
+
+pub fn add(left: u64, right: u64) -> u64 {
+    left + right
+}
+```
+
+Initial tests:
+
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn add_works() {
+        assert_eq!(add(2, 2), 4);
+    }
+
+    #[test]
+    fn allows_value_below_threshold() {
+        let filter = LowPassFilter::new(5);
+        assert!(filter.allows(4));
+    }
+
+    #[test]
+    fn rejects_value_above_threshold() {
+        let filter = LowPassFilter::new(5);
+        assert!(!filter.allows(6));
+    }
+}
+```
+
+From a unit testing perspective, these tests are reasonable:
+
+- we check an allowed value (4)
+- we check a rejected value (6)
+- we test `add` with a simple case
+
+Now let’s see what `cargo-mutants` makes of this.
+
+---
+
+## 4. First `cargo-mutants` run: missed mutants
+
+Running:
+
+```bash
+cargo mutants
+```
+
+On this crate, you might see output like:
+
+```text
+Found 9 mutants to test
+ok      Unmutated baseline in 0.4s build + 0.1s test
+INFO    Auto-set test timeout to 20s
+
+MISSED   src/lib.rs:16:10: replace + with * in add in 0.2s build + 0.1s test
+MISSED   src/lib.rs:11:15: replace < with <= in LowPassFilter::allows in 0.2s build + 0.1s test
+
+9 mutants tested in 2s: 2 missed, 7 caught
+```
+
+Interpretation:
+
+- Baseline tests pass in the scratch copy
+- `cargo-mutants` generated 9 mutants
+- 7 mutants caused some test to fail (they were **caught**)
+- 2 mutants did **not** cause any test to fail (they were **missed**)
+
+The missed mutants are:
+
+1. `value < self.threshold` → `value <= self.threshold`
+2. `left + right` → `left * right`
+
+This shows how mutation testing points at **very specific blind spots**:
+
+- the filter behavior at the **boundary** (`value == threshold`)
+- the lack of test inputs that distinguish addition from multiplication
+
+---
+
+## 5. Making tests more precise
+
+To address the first missed mutant (`<` → `<=`), add a boundary test:
+
+```rust
+#[test]
+fn rejects_value_equal_to_threshold() {
+    let filter = LowPassFilter::new(5);
+    assert!(!filter.allows(5));
+}
+```
+
+This test fails if `allows` is implemented with `<=`, so the `<` → `<=` mutant is now **killed**.
+
+To address the second missed mutant (`+` → `*`), adjust the `add` test to use inputs where `a + b` differs from `a * b`:
+
+```rust
+#[test]
+fn add_works() {
+    assert_eq!(add(2, 3), 5);
+}
+```
+
+- Real function: `2 + 3 = 5` → test passes.
+- Mutant: `2 * 3 = 6` → test fails.
+
+Rerunning `cargo mutants` now reports:
+
+```text
+9 mutants tested in 2s: 9 caught
+```
+
+The important point:
+
+- the **implementation** of `LowPassFilter` and `add` did not change
+- only the **tests** changed
+- mutation testing guided those changes by showing two concrete places where tests were not specific enough
+
+---
+
+## 6. Mutation genres: what cargo-mutants changes
+
+The command:
+
+```bash
+cargo mutants --list --diff
+```
+
+lists all candidate mutants and shows how each one changes the source, without running tests.
+
+On this example crate, `cargo-mutants` prints for `LowPassFilter::allows`:
+
+```text
+src/lib.rs:11:9: replace LowPassFilter::allows -> bool with true
+src/lib.rs:11:9: replace LowPassFilter::allows -> bool with false
+src/lib.rs:11:15: replace < with == in LowPassFilter::allows
+src/lib.rs:11:15: replace < with > in LowPassFilter::allows
+src/lib.rs:11:15: replace < with <= in LowPassFilter::allows
+```
+
+with diffs like:
+
+```diff
+--- src/lib.rs
++++ replace LowPassFilter::allows -> bool with true
+@@ -3,17 +3,17 @@
+ }
+
+ impl LowPassFilter {
+     pub fn new(threshold: i32) -> Self {
+         Self { threshold }
+     }
+
+     pub fn allows(&self, value: i32) -> bool {
+-        value < self.threshold
++        true /* ~ changed by cargo-mutants ~ */
+     }
+ }
+```
+
+and:
+
+```diff
+--- src/lib.rs
++++ replace < with <= in LowPassFilter::allows
+@@ -3,17 +3,17 @@
+ }
+
+ impl LowPassFilter {
+     pub fn new(threshold: i32) -> Self {
+         Self { threshold }
+     }
+
+     pub fn allows(&self, value: i32) -> bool {
+-        value < self.threshold
++        value <= /* ~ changed by cargo-mutants ~ */ self.threshold
+     }
+ }
+```
+
+For `add`, it prints:
+
+```text
+src/lib.rs:16:5: replace add -> u64 with 0
+src/lib.rs:16:5: replace add -> u64 with 1
+src/lib.rs:16:10: replace + with - in add
+src/lib.rs:16:10: replace + with * in add
+```
+
+with diffs like:
+
+```diff
+--- src/lib.rs
++++ replace add -> u64 with 0
+@@ -8,17 +8,17 @@
+     }
+
+     pub fn allows(&self, value: i32) -> bool {
+         value < self.threshold
+     }
+ }
+
+ pub fn add(left: u64, right: u64) -> u64 {
+-    left + right
++    0 /* ~ changed by cargo-mutants ~ */
+ }
+```
+
+and:
+
+```diff
+--- src/lib.rs
++++ replace + with * in add
+@@ -8,17 +8,17 @@
+     }
+
+     pub fn allows(&self, value: i32) -> bool {
+         value < self.threshold
+     }
+ }
+
+ pub fn add(left: u64, right: u64) -> u64 {
+-    left + right
++    left * /* ~ changed by cargo-mutants ~ */ right
+ }
+```
+
+Two important mutation genres show up here.
+
+### 6.1 `FnValue`: replace function body with a value
+
+For both `LowPassFilter::allows` and `add`, `cargo-mutants` generates mutants that simply replace the whole function body with a constant:
+
+```diff
+-    pub fn allows(&self, value: i32) -> bool {
+-        value < self.threshold
+-    }
++    pub fn allows(&self, value: i32) -> bool {
++        false /* ~ changed by cargo-mutants ~ */
++    }
+```
+
+and:
+
+```diff
+- pub fn add(left: u64, right: u64) -> u64 {
+-     left + right
+- }
++ pub fn add(left: u64, right: u64) -> u64 {
++     1 /* ~ changed by cargo-mutants ~ */
++ }
+```
+
+The **`FnValue`** genre replaces the entire function body with a constant value that matches the return type (`bool`, `u64`, etc.). It checks whether your tests would notice if the function was completely wrong.
+
+### 6.2 `BinaryOperator`: flip arithmetic and comparison operators
+
+The other obvious genre here is **`BinaryOperator`**:
+
+```diff
+-        value < self.threshold
++        value > /* ~ changed by cargo-mutants ~ */ self.threshold
+```
+
+and:
+
+```diff
+-    left + right
++    left - /* ~ changed by cargo-mutants ~ */ right
+```
+
+These are small, local changes that often reveal missing tests at boundaries or around error cases.
+
+Even on a toy crate, the generated mutants already feel “realistic”. They’re the kinds of mistakes a human could actually make.
+
+---
+
+## 7. Reports: the `mutants.out` directory
+
+When you run the following command:
+```bash
+cargo mutants -o mutants-report
+```
+The tool doesn’t just write to the terminal; it produces a structured report in the specified directory.
+
+Typical layout:
+
+```text
+mutants-report/
+  diff/
+  log/
+  caught.txt
+  debug.log
+  lock.json
+  missed.txt
+  mutants.json
+  outcomes.json
+  timeout.txt
+  unviable.txt
+```
+
+The most important parts:
+
+### 7.1 `mutants.json` – the mutation plan
+
+`mutants.json` lists **all planned mutants**, before tests run. Each entry describes where the mutant lives and what will be changed:
+
+```json
+{
+  "package": "cargo_mutants_lab",
+  "file": "src/lib.rs",
+  "function": {
+    "function_name": "LowPassFilter::allows",
+    "return_type": "-> bool",
+    "span": {
+      "start": {"line": 10, "column": 5},
+      "end": {"line": 12, "column": 6}
+    }
+  },
+  "span": {
+    "start": {"line": 11, "column": 9},
+    "end": {"line": 11, "column": 31}
+  },
+  "replacement": "false",
+  "genre": "FnValue"
+}
+```
+
+This acts as a **static mutation plan**:
+
+- which functions are targeted
+- what spans will be replaced
+- which mutation genre and replacement text will be used
+
+### 7.2 `outcomes.json` – baseline and mutant results
+
+`outcomes.json` records, for each scenario (baseline + each mutant):
+
+- what was run
+- how it behaved
+- how long each phase took
+
+Baseline entry:
+
+```json
+{
+    "scenario": "Baseline",
+    "summary": "Success",
+    "log_path": "log/baseline.log",
+    "diff_path": null,
+    "phase_results": [
+      {
+        "phase": "Build",
+        "duration": 0.303370988,
+        "process_status": "Success",
+        "argv": [
+          "cargo",
+          "test",
+          "--no-run",
+          "--verbose",
+          "--package=cargo_mutants_lab@0.1.0"
+        ]
+      },
+      {
+        "phase": "Test",
+        "duration": 0.051262585,
+        "process_status": "Success",
+        "argv": [
+          "cargo",
+          "test",
+          "--verbose",
+          "--package=cargo_mutants_lab@0.1.0"
+        ]
+      }
+    ]
+  },
+```
+
+At the bottom of `outcomes.json` there is also a summary:
+
+```json
+{
+  "total_mutants": 9,
+  "missed": 0,
+  "caught": 9,
+  "timeout": 0,
+  "unviable": 0
+}
+```
+
+For tooling and CI use cases, this structure is very convenient:
+
+- `mutants.json` tells you what was tested
+- `outcomes.json` tells you what happened
+- `diff/` contains per-mutant patches
+- `log/` contains per-mutant build/test logs
+- `caught.txt`, `missed.txt`, `timeout.txt`, `unviable.txt` give quick plain-text lists
+
+---
+
+## 8. When and how to use cargo-mutants
+
+Some practical guidelines, based on the docs and the tool’s design:
+
+- **Start small and local**  
+  Run `cargo mutants` on a small crate or a critical module before trying it on a full monorepo.
+
+- **Use it on important code paths**  
+  Focus on logic that is security-sensitive, safety-critical, or hard to reason about. Mutation testing is most valuable where bugs would really hurt.
+
+- **Think about test determinism**  
+  Because your tests are rerun many times against mutated code, flaky tests, random seeds, and uncontrolled side effects can make results noisy.
+
+- **Integrate with CI selectively**  
+  `cargo-mutants` supports filters like `--file`, `--re`, `--exclude`, and sharding (`--shard 1/4`) so you can narrow down which mutants run in CI.
+
+Mutation testing is not a replacement for other techniques. It works best as **one layer** in a testing and assurance stack that may also include:
+
+- unit and integration tests
+- fuzzing
+- property-based testing
+- code review and manual auditing
+- formal methods where applicable
+
+---
+
+## 9. References
+
+- **cargo-mutants user guide:** main documentation – <a href="https://mutants.rs/" target="_blank" rel="noopener noreferrer">mutants.rs</a>
+- **Installation:** <a href="https://mutants.rs/installation.html" target="_blank" rel="noopener noreferrer">Installation guide</a>
+- **How it works:** <a href="https://mutants.rs/how-it-works.html" target="_blank" rel="noopener noreferrer">How cargo-mutants works</a>
+- **Generating mutants:** mutation genres (`FnValue`, operators, etc.) – <a href="https://mutants.rs/mutants.html" target="_blank" rel="noopener noreferrer">Generating mutants</a>
+- **`mutants.out` structure:** <a href="https://mutants.rs/mutants-out.html" target="_blank" rel="noopener noreferrer">mutants.out explained</a>
+- **GitHub repository:** <a href="https://github.com/sourcefrog/cargo-mutants" target="_blank" rel="noopener noreferrer">sourcefrog/cargo-mutants</a>
+- **Example blog post:** Nicolas Fränkel, “Mutation Testing in Rust” – <a href="https://blog.frankel.ch/mutation-testing-rust/" target="_blank" rel="noopener noreferrer">blog.frankel.ch/mutation-testing-rust</a>
+- **Talk:** Martin Pool, “Finding Bugs with cargo-mutants” (RustConf 2024) – <a href="https://www.youtube.com/watch?v=PjDHe-PkOy8" target="_blank" rel="noopener noreferrer">Finding Bugs with cargo-mutants</a>
