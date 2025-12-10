@@ -1,0 +1,396 @@
+---
+title: "Snapshot Testing Rust Code with cargo-insta"
+description: "A practical introduction to snapshot testing in Rust using insta and the cargo-insta CLI, with a step-by-step example."
+pubDate: "2025-12-09"
+updatedDate: "2025-12-09"
+tags: ["rust", "testing", "tooling", "snapshot testing"]
+draft: false
+heroImage: "../../assets/cargo_insta_snapshot_testing.png"
+---
+
+I discovered `cargo-insta` while working on a pull request for `cargo-mutants` and it immediately clicked for me.
+
+It solves a very real problem I kept running into: how do you **test complex output** (JSON, diagnostics, CLI output) without filling your test files with walls of strings or hand-rolled comparison logic?
+
+This post introduces **snapshot testing** in Rust with
+<a href="https://insta.rs/" target="_blank" rel="noopener noreferrer">insta</a>
+and walks through a complete, copy-pastable example using the `cargo-insta` CLI. By the end, you should be able to:
+
+- add `insta` to a new crate
+- write and run snapshot tests
+- understand where snapshots live and how to review changes
+
+---
+
+## Why snapshot testing?
+
+Traditional assertions like
+
+```rust
+assert_eq!(result, "some expected string");
+```
+
+are great when:
+
+- the expected value is **short**, and
+- it **rarely changes**.
+
+They become painful when:
+
+- the output is **large** (think multi-line JSON)
+- the structure changes often
+- you want to see a nice diff when something breaks
+
+Snapshot testing flips the mental model:
+
+1. You **run the code once**, capture the output, and store it as a **snapshot file**.
+2. Future test runs compare the current output against that snapshot.
+3. When output changes, you **review the diff** and either:
+   - accept the new snapshot (change is intentional), or
+   - fix the code (change is a regression).
+
+The snapshot becomes the “golden master” of what you expect the output to look like.
+
+---
+
+## Getting started with `insta` and `cargo-insta`
+
+<a href="https://insta.rs/" target="_blank" rel="noopener noreferrer">insta</a> is the Rust crate that does the heavy lifting: macros that record and compare snapshots in your tests.
+
+For this example we’ll use **JSON snapshots**, which work nicely for tools that emit structured output (reports, diagnostics, etc.).
+
+Add the dependencies:
+
+```toml
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+
+[dev-dependencies]
+insta = { version = "1", features = ["json"] }
+```
+
+The crate provides several macros, for example:
+
+- `assert_snapshot!` for string snapshots
+- `assert_debug_snapshot!` for `Debug` output
+- `assert_json_snapshot!` for JSON-serializable values
+- plus others for YAML, TOML, CSV, etc.
+
+To make the workflow nice, there is also a CLI tool: `cargo-insta`.
+
+Install it like any other cargo subcommand:
+
+```bash
+cargo install cargo-insta
+```
+
+You’ll then have commands such as:
+
+- `cargo insta test` — run tests and collect snapshot changes
+- `cargo insta review` — interactively review diffs and accept or reject changes
+- `cargo insta test --review` — run tests and immediately open the review UI
+
+Now let’s put all of this together in a small, fully working project.
+
+---
+
+## A complete, working example
+
+We’ll build a tiny crate that produces a “mutation report” and snapshot-test its JSON output.
+
+If you create the following files, you will have a fully working example.
+
+#### 1. Project layout
+
+```text
+insta-demo/
+├── Cargo.toml
+├── src
+│   └── lib.rs
+└── tests
+    └── snapshot_report.rs
+```
+
+From scratch:
+
+```bash
+cargo new insta-demo --lib
+cd insta-demo
+```
+
+#### 2. `Cargo.toml`
+
+Replace the contents of `Cargo.toml` with:
+
+```toml
+[package]
+name = "insta-demo"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+
+[dev-dependencies]
+insta = { version = "1", features = ["json"] }
+
+# Optional but nice: faster, smaller insta in dev builds
+[profile.dev.package]
+insta.opt-level = 3
+similar.opt-level = 3
+```
+
+The `profile.dev.package` bit is optional but recommended by the insta docs: it makes diffs faster and keeps memory usage down.
+
+#### 3. Library code: `src/lib.rs`
+
+This is the code we want to test:
+
+```rust
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MutationReport {
+    pub mutants: u32,
+    pub killed: u32,
+    pub timeout: u32,
+}
+
+pub fn sample_report() -> MutationReport {
+    MutationReport {
+        mutants: 42,
+        killed: 39,
+        timeout: 1,
+    }
+}
+```
+
+It’s intentionally simple, but realistic enough: a struct you might serialize to JSON in a testing tool.
+
+#### 4. Snapshot test: `tests/snapshot_report.rs`
+
+Now create the test file:
+
+```rust
+use insta::assert_json_snapshot;
+use insta_demo::sample_report;
+
+#[test]
+fn mutation_report_snapshot() {
+    let report = sample_report();
+    assert_json_snapshot!("mutation_report", report);
+}
+```
+
+A few details:
+
+- `insta_demo` is the crate name, derived from `name = "insta-demo"` in `Cargo.toml`.
+- `assert_json_snapshot!` takes a snapshot name (`"mutation_report"`) and a value that implements `serde::Serialize`.
+- insta will serialize the value to JSON and manage snapshot files for you.
+
+---
+
+## First run: creating the initial snapshot
+
+The recommended flow is:
+
+1. Run the tests once.
+2. Look at what insta produced.
+3. If you’re happy with it, accept the snapshot.
+
+Start with:
+
+```bash
+cargo test
+```
+
+On this **first** run:
+
+- The test will **fail** because there is no accepted snapshot yet.
+- insta writes a **proposed snapshot** next to your tests, with a `.snap.new` extension.  
+  In this example you’ll see something like:
+
+```text
+tests/snapshots/snapshot_report__mutation_report.snap.new
+```
+
+Now review and accept it:
+
+```bash
+cargo insta review
+```
+
+This opens an interactive review UI where you can see the new snapshot. If it looks correct, accept it. insta will rename:
+
+```text
+snapshot_report__mutation_report.snap.new
+→ snapshot_report__mutation_report.snap
+```
+
+Now you have a baseline snapshot committed to your repo.
+
+At this point:
+
+```bash
+cargo test
+```
+
+should pass cleanly:
+
+- insta finds `*.snap` files
+- compares your current output against them
+- and everything matches
+
+Tip: once you’re comfortable, you can also use:
+```bash
+cargo insta test --review
+```
+
+which runs your tests and then directly opens the review UI in one go.
+
+---
+
+## Changing code and seeing diffs
+
+Now let’s simulate a change or regression.
+
+Modify `sample_report` in `src/lib.rs`:
+
+```rust
+pub fn sample_report() -> MutationReport {
+    MutationReport {
+        mutants: 42,
+        killed: 39,
+        timeout: 2, // changed from 1 to 2
+    }
+}
+```
+
+### Using `cargo test` (CI-style)
+
+Run:
+
+```bash
+cargo test
+```
+
+Because there is an accepted snapshot (`.snap`) and the output has changed, the test will **fail**.
+
+You’ll see a snapshot summary, a diff of the old vs new JSON, and a hint to run `cargo insta review` if the change is intentional.
+
+This is typically how you want things to behave in CI: if snapshots are out of date, the build goes red.
+
+### Using `cargo insta test` (local workflow)
+
+For local development you can also do:
+
+```bash
+cargo insta test
+```
+
+With the default settings (`INSTA_UPDATE=auto`, and no `CI=true`), insta will:
+
+- run all tests
+- notice the changed output
+- write a new `*.snap.new` file next to the existing `*.snap`
+- keep the test run **green**, but tell you there are snapshots to review
+
+Then:
+
+```bash
+cargo insta review
+```
+
+lets you inspect the diff and decide:
+
+- **Accept** → the `.snap.new` replaces the old `.snap` and becomes the new baseline.
+- **Reject** → keep the old snapshot and fix your code instead.
+
+A common local loop is:
+
+> Change code → `cargo insta test` → `cargo insta review` → commit code + updated `.snap` files.
+
+---
+
+## Using insta and cargo-insta in CI
+
+In CI you normally don’t want new snapshots to be written automatically.
+
+By default insta looks at the `CI` environment variable. When `CI=true`:
+
+- insta does **not** write new snapshot files, even with `INSTA_UPDATE=auto`
+- mismatches simply make your tests fail
+
+A typical setup is:
+
+```bash
+# In CI
+export CI=true
+cargo test
+```
+
+Locally, you then fix things with:
+
+```bash
+cargo insta test
+cargo insta review
+```
+
+and commit the updated `*.snap` files.
+
+If you ever want more control, you can use the `INSTA_UPDATE` environment variable (for example, `INSTA_UPDATE=no` to never write snapshots, `INSTA_UPDATE=always` to overwrite, etc.), but for most projects the default behaviour plus `cargo insta review` is enough.
+
+---
+
+## How this fits into the Mutorium universe
+
+At Mutorium Labs we care a lot about:
+
+- **Testing** (obviously)
+- **developer tooling**
+- **making tests that actually catch real bugs** (hello, mutation testing)
+
+Snapshot testing with `insta` and `cargo-insta` fits in nicely:
+
+- Tools like `cargo-mutants`, `noir-metrics`, and `zk-mutant` produce **structured output** (JSON, reports, diagnostics).
+- Snapshot tests are a lightweight way to assert “this is what the output should look like” without manually writing huge strings in your test files.
+- Once you have a nice suite of snapshot tests, you can point a mutation testing tool at the code and ask:
+  - “If I subtly break this logic, do my snapshot tests **notice**?”
+
+Snapshot tests give you **broad coverage** of outputs. Mutation testing then checks whether those tests are **sensitive** to real faults. Together, they make regressions much harder to sneak in.
+
+---
+
+## Beyond this example
+
+This post focused on a small, JSON-based example to get you going. insta can do a lot more:
+
+- Snapshot formats:
+  - YAML (the format the insta docs prefer),
+  - JSON, TOML, CSV, RON…
+- **Inline snapshots** that live directly in your test code and are updated by `cargo insta review`.
+- **Annotations** via `with_settings!` to include extra context (like template source or input data) in the snapshot, which really helps during review.
+- Fine-grained control over updates using the `INSTA_UPDATE` environment variable.
+- Behaviour tuned for CI, where new snapshots are never written automatically.
+
+If this example clicked for you, it’s worth browsing the
+<a href="https://insta.rs/docs/" target="_blank" rel="noopener noreferrer">insta documentation</a>
+to see what else is possible.
+
+---
+
+## Summary
+
+To recap:
+
+- Snapshot testing is a powerful way to test complex output like JSON and text without huge inline strings.
+- `insta` provides the snapshot macros (`assert_json_snapshot!`, `assert_debug_snapshot!`, `assert_snapshot!`, …).
+- `cargo-insta` adds a great workflow:
+  - `cargo test` to behave normally and fail when snapshots don’t match
+  - `cargo insta test` to collect snapshot changes
+  - `cargo insta review` to interactively inspect and accept/reject diffs
+- With the `insta-demo` example above, you now have a complete, minimal setup you can copy into your own projects.
+
+If you haven’t tried snapshot testing in Rust yet, `cargo-insta` is a great place to start. And if you’re already using mutation testing, combining the two can give you a very powerful safety net.
+
+Happy snapshotting!
