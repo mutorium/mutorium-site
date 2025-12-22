@@ -1,0 +1,120 @@
+---
+title: "Announcing noir-metrics v0.2.0"
+description: "A stabilization-focused release: deterministic output, stronger tests via cargo-mutants + insta snapshots, and a clearer CLI format flag."
+pubDate: "2025-12-22"
+updatedDate: "2025-12-22"
+tags: ["noir", "rust", "metrics", "tooling", "testing", "mutation testing", "cargo-mutants", "insta"]
+draft: false
+heroImage: '../../assets/noir_metrics_announcement_v0.2.0.png'
+---
+
+`noir-metrics` **v0.2.0 is now live on crates.io**.
+
+This release is less about adding flashy new metrics and more about making the existing ones **reliable, testable, and stable enough to build tooling on top**.
+
+- Crate: https://crates.io/crates/noir-metrics  
+- Source: https://github.com/mutorium/noir-metrics
+
+---
+
+## What changed in v0.2.0
+
+#### 1. Stabilization via mutation testing (cargo-mutants)
+
+The core focus of v0.2.0 was **stabilization**.
+
+`noir-metrics` is a line-based analyzer with heuristics (tests, comments, brace depth, etc.). That kind of logic is exactly where bugs hide: a single `+=` turning into `-=` can silently skew results.
+
+To harden this, development was guided heavily by **`cargo-mutants`**:
+
+- run mutation testing against the codebase,
+- identify missed mutants (places where tests didn’t detect wrong behavior),
+- add targeted tests (and snapshots) until remaining survivors were either fixed or proven equivalent,
+- iterate until **all non-equivalent mutants are caught**.
+
+This gives much higher confidence that metrics output is not “accidentally correct” for a narrow set of fixtures.
+
+#### 2. Snapshot testing with insta
+
+To prevent fragile “wall of asserts” tests (and to catch subtle regressions), v0.2.0 adds **snapshot testing with `insta`** for metrics structures and CLI JSON output.
+
+Snapshots are especially useful here because they:
+- lock down the full structure of the report,
+- make changes explicit and reviewable,
+- reduce boilerplate when new fields get added later.
+
+#### 3. Deterministic output for stable tooling
+
+To support snapshots and downstream tooling, v0.2.0 ensures deterministic ordering of discovered `.nr` files. This avoids “same project, different output ordering” issues across machines and CI runs.
+
+#### 4. Clearer CLI output format
+
+The CLI now documents output format through a single flag:
+
+- `--format human` (default)
+- `--format json`
+
+Backwards compatibility is preserved:
+
+- `--json` still works as a hidden alias for `--format json`, but `--format json` is the preferred interface going forward.
+
+---
+
+## Installing and running v0.2.0
+
+From crates.io:
+
+```bash
+cargo install noir-metrics
+```
+
+Run it in any directory containing a `Nargo.toml`:
+
+```bash
+# Human-readable output (default)
+noir-metrics .
+
+# JSON output to stdout
+noir-metrics . --format json
+
+# JSON output to a file
+noir-metrics . --format json --output metrics.json
+```
+
+---
+
+## Why this release matters
+
+Mutorium Labs’ longer-term goal is to bring **coverage and mutation testing** tooling to the Noir ecosystem.
+
+For that to work, the ecosystem needs building blocks that are:
+
+- **machine-readable** (JSON output with schema versioning),
+- **stable over time** (deterministic output),
+- **well-tested** (including mutation testing),
+- and **pleasant to integrate** (CLI and library usage).
+
+v0.2.0 is about getting those foundations right.
+
+---
+
+## A note on heuristics (and what’s next)
+
+`noir-metrics` still intentionally does *not* parse Noir’s full AST. It remains a fast, line-based analyzer with Noir-aware heuristics that are cheap enough to run in CI and useful enough for audits and tooling.
+
+Future directions (not necessarily in this order):
+
+- control-flow and complexity indicators (`if`, loops, `match` counts),
+- more Noir-specific signals (constraint/assert density),
+- include/exclude configuration for real-world repos,
+- deeper integration ideas (eventual `nargo metrics` subcommand built on top of this crate).
+
+---
+
+## References
+
+- crates.io: https://crates.io/crates/noir-metrics  
+- GitHub: https://github.com/mutorium/noir-metrics  
+- Noir language: https://noir-lang.org/  
+- cargo-mutants: https://mutants.rs/
+- insta snapshot testing: https://insta.rs/
