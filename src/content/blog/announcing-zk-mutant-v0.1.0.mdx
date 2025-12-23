@@ -1,0 +1,209 @@
+---
+title: "Announcing zk-mutant v0.1.0"
+description: "Mutation testing for Noir circuits: run your Nargo tests under small source-level mutations to measure test strength."
+pubDate: "2025-12-23"
+updatedDate: "2025-12-23"
+tags: ["noir", "rust", "tooling", "mutation testing", "zk"]
+draft: false
+heroImage: '../../assets/zk_mutant_announcement.png'
+---
+
+Noir now has a new (slightly chaotic) helper in its toolbox: **`zk-mutant` v0.1.0**.
+
+`zk-mutant` is a Rust CLI that runs your Noir tests under small **source-level mutations** (e.g. `==` → `!=`, `<` → `>=`) to estimate how strong your test suite is at catching bugs.
+
+> **Status:** This is an early release. The CLI, output formats, and mutation operators will evolve. Expect breaking changes before `1.0.0`.
+
+This is the next building block in Mutorium Labs’ longer-term plan to bring **coverage and mutation testing** tooling to the Noir ecosystem.
+
+---
+
+## Why mutation testing for Noir?
+
+In most projects, “tests pass” is a necessary baseline — but it doesn’t tell you whether the tests would actually catch a meaningful regression.
+
+Mutation testing flips that question:
+
+- Make a tiny, plausible change in the program (a “mutant”)
+- Run the test suite
+- If tests still pass, the mutant **survived** → your tests likely missed a bug-shaped change
+- If tests fail, the mutant was **killed** → your tests defended that behavior
+
+For Noir circuits, this is especially useful when you want confidence that:
+
+- constraints and edge cases are actually exercised,
+- invariants are enforced by tests (not by accident),
+- refactors didn’t silently weaken your checks.
+
+`zk-mutant` focuses on making this workflow simple and repeatable for Noir/Nargo projects.
+
+---
+
+## What `zk-mutant` v0.1.0 does today
+
+At a high level, `zk-mutant`:
+
+- Locates a Noir project by looking for `Nargo.toml`
+- Discovers mutation opportunities in `.nr` files (deterministic ordering)
+- Runs a **baseline** `nargo test` first (if baseline fails, mutation testing stops)
+- Executes mutants by applying one mutation at a time in a temporary project copy
+- Produces both **human-readable output** and **machine-readable JSON** (optional)
+
+### Outcomes
+
+Each mutant ends up in one of these buckets:
+
+- **Killed**: tests failed under mutation ✅
+- **Survived**: tests still passed ❌
+- **Invalid**: the mutant couldn’t be executed (e.g., patch failure or runner error)
+- **NotRun**: discovered but not executed (e.g., due to `--limit`)
+
+---
+
+## Installing and running the CLI
+
+From crates.io:
+
+```bash
+cargo install zk-mutant
+```
+
+Prerequisites:
+
+- Rust (edition 2024)
+- `nargo` available on your `PATH` (Noir toolchain)
+
+Run against a Noir project:
+
+```bash
+# Scan: show project overview + mutant inventory
+zk-mutant scan --project path/to/noir-project
+
+# List: print discovered mutants (no execution)
+zk-mutant list --project path/to/noir-project
+
+# Run: baseline + mutation testing
+zk-mutant run --project path/to/noir-project
+```
+
+Helpful flags:
+
+- `--limit N` — run only the first `N` mutants (deterministic order)
+- `-v / --verbose` — print a detailed per-mutant list (killed/survived/invalid)
+- `--json` — machine-readable JSON to stdout (human output routed to stderr)
+- `--fail-on-survivors` — exit with code 2 when any mutant survives (CI-friendly)
+- `--out-dir <PATH>` — write artifacts to a specific output directory
+
+Example:
+
+```bash
+zk-mutant run --project path/to/noir-project --limit 50 -v --fail-on-survivors
+```
+
+---
+
+## Output artifacts
+
+By default, `zk-mutant run` writes to:
+
+- `<project_root>/mutants.out/`
+
+…and rotates old results to:
+
+- `<project_root>/mutants.out.old/`
+
+Current artifacts include:
+
+- `run.json` — full run report (summary + per-mutant results)
+- `mutants.json` — the full discovered mutant list (pre-limit)
+- `outcomes.json` — compact outcomes list for dashboards/tooling
+- `caught.txt` / `missed.txt` / `unviable.txt` — cargo-mutants-style lists
+- `diff/000001.diff` — minimal per-mutant diff snippets
+- `log` — stable, timestamp-free “what happened” log
+
+This makes it easy to:
+
+- store results as CI artifacts,
+- diff runs across branches,
+- build dashboards or higher-level tools on top of the JSON output.
+
+---
+
+## JSON output (machine-readable mode)
+
+When run with `--json`, `zk-mutant` prints a JSON report to **stdout** and routes all human output to **stderr**.
+
+This is designed for CI/CD usage where you want to:
+
+- parse the summary counts,
+- extract the list of surviving mutants,
+- store reports as build artifacts,
+- gate merges with `--fail-on-survivors`.
+
+---
+
+## How this ties into coverage & mutation testing for Noir
+
+Mutation testing gets much more powerful when you can combine it with signals like:
+
+- which code is exercised by tests,
+- which operators matter most in real circuits,
+- which areas of a project are high-risk or under-tested.
+
+`zk-mutant` v0.1.0 is intentionally simple and source-level — but it’s a concrete foundation to iterate on:
+
+- more mutation operators,
+- better filtering and targeting,
+- smarter execution strategies (performance/concurrency),
+- and eventually deeper Noir integration.
+
+---
+
+## Roadmap (near-term)
+
+Things we’re likely to explore next:
+
+- **Operator expansion**
+  - more arithmetic and boolean operators
+  - mutation categories aligned with Noir idioms
+
+- **Filtering & targeting**
+  - include/exclude globs
+  - focus by file/function/test range
+  - prioritize mutants in “high-value” locations
+
+- **Performance**
+  - reuse temp trees where possible
+  - concurrency (bounded parallel execution)
+  - better caching for baseline + compilation steps
+
+- **Reporting ergonomics**
+  - richer diff output
+  - stable IDs across small edits (where possible)
+  - improved summaries for CI
+
+---
+
+## Status: early 0.1, feedback very welcome
+
+`zk-mutant` v0.1.0 is an **early release**. The current UX is designed to be practical today, while leaving room to evolve quickly as we learn from real Noir projects.
+
+If you try it out and you hit:
+
+- a mutant that “should be killed” but survives,
+- an operator that feels noisy/useless,
+- a project layout that breaks discovery,
+- or an output format you’d like to consume,
+
+…please open an issue and include a small repro (or a minimal snippet).
+
+---
+
+## Getting started
+
+- **Crate:** https://crates.io/crates/zk-mutant 
+- **Source:** https://github.com/mutorium/zk-mutant
+
+If you’re building on Noir and you care about test quality (audits, refactors, CI confidence), give `zk-mutant` a spin.
+
+This is v0.1.0 — small, direct, and ready to iterate.
