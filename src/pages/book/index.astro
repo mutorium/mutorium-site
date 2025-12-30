@@ -7,6 +7,143 @@ import { SITE_TITLE, SITE_DESCRIPTION } from "../../consts";
 const pageTitle = "The Mutorium Labs Book of Mutation Testing";
 const pageDescription =
     "A living, practical book on mutation testing – work in progress by Mutorium Labs.";
+
+type ChapterStatus = "published" | "planned";
+
+type Chapter = {
+    title: string;
+    status: ChapterStatus;
+    href?: string;
+    note?: string;
+};
+
+type Module = {
+    id: string;
+    title: string;
+    description: string;
+    chapters: Chapter[];
+};
+
+const modules: Module[] = [
+    {
+        id: "foundations",
+        title: "Module 0 — Foundations",
+        description:
+            "The mental models and workflow you need to use mutation testing as a measurement instrument (not just another tool).",
+        chapters: [
+            {
+                title: "What Is Mutation Testing? A Practical Introduction",
+                href: "/blog/what-is-mutation-testing/",
+                status: "published",
+            },
+            {
+                title: "Coverage vs Mutation: when 100% coverage lies",
+                status: "planned",
+            },
+            {
+                title: "How to read mutation results (killed / survived / invalid)",
+                status: "planned",
+            },
+            {
+                title: "Equivalent mutants: when “survived” doesn’t mean weak tests",
+                status: "planned",
+            },
+            {
+                title: "How to systematically kill survivors (assertions, boundaries, invariants)",
+                status: "planned",
+            },
+            {
+                title: "Swiss Cheese Model of Web3 Security: Where Mutation Testing Fits",
+                href: "/blog/swiss-cheese-model-of-web3/",
+                status: "published",
+                note: "Context chapter (optional): where mutation testing fits among tests, fuzzing, audits, and formal methods.",
+            },
+        ],
+    },
+    {
+        id: "rust",
+        title: "Module 1 — Mutation Testing in Rust",
+        description:
+            "Practical mutation testing with cargo-mutants — plus the testing patterns that reliably turn survivors into killed mutants.",
+        chapters: [
+            {
+                title: "cargo-mutants Quickstart (real workflow, not a tour)",
+                href: "/blog/an-introduction-to-cargo-mutants/",
+                status: "published",
+            },
+            {
+                title: "Mutation genres and what they reveal",
+                status: "planned",
+            },
+            {
+                title: "Reports & automation (mutants.out, JSON, diffs, CI gating)",
+                status: "planned",
+            },
+            {
+                title: "Scaling: flakiness, timeouts, determinism, sharding",
+                status: "planned",
+            },
+            {
+                title: "Snapshots as a force multiplier (insta + mutation testing)",
+                href: "/blog/cargo-insta-snapshot-testing/",
+                status: "published",
+            },
+        ],
+    },
+    {
+        id: "zk",
+        title: "Module 2 — Mutation Testing for ZK Circuits (Noir) with zk-mutant",
+        description:
+            "Source-level mutations for Noir projects, CI-friendly outputs, and (eventually) high-signal operator design for circuits.",
+        chapters: [
+            {
+                title: "Why mutation testing is especially useful for circuits",
+                status: "planned",
+            },
+            {
+                title: "zk-mutant workflow mastery (scan / list / run + deterministic CI)",
+                status: "planned",
+            },
+            {
+                title: "Artifacts & consumption (run.json, mutants.json, outcomes.json)",
+                status: "planned",
+            },
+            {
+                title: "Announcing zk-mutant v0.1.0",
+                href: "/blog/announcing-zk-mutant-v0-1-0/",
+                status: "published",
+                note: "Current state of the tool + artifacts + near-term roadmap.",
+            },
+            {
+                title: "High-signal Noir mutation operators (taxonomy by bug class)",
+                status: "planned",
+            },
+            {
+                title: "Equivalent mutants in ZK + how to handle them",
+                status: "planned",
+            },
+            {
+                title: "Performance + roadmap (grounded, practical)",
+                status: "planned",
+            },
+        ],
+    },
+    {
+        id: "future",
+        title: "Future modules",
+        description:
+            "Planned, but not started. We’ll add these once the core modules above are solid.",
+        chapters: [
+            {
+                title: "Mutation Testing for Solidity (planned)",
+                status: "planned",
+            },
+        ],
+    },
+];
+
+const statusLabel = (status: ChapterStatus) =>
+    status === "published" ? "Published" : "Planned";
 ---
 
 <!doctype html>
@@ -23,32 +160,154 @@ const pageDescription =
             <section class="hero">
                 <h1>{pageTitle}</h1>
                 <p class="tagline">
-                    A programmer-focused book on mutation testing – from
-                    fundamentals to Rust, Solidity, and ZK circuits.
+                    A programmer-focused book on mutation testing — from
+                    fundamentals to Rust and ZK circuits.
                 </p>
+
                 <p>
                     This is a <strong>work in progress</strong>. Chapters will
-                    be published as blog posts first. Once more content is live,
-                    this page will become a proper table of contents.
+                    be published as blog posts first. As the library grows, this
+                    page acts as a living table of contents.
                 </p>
+
+                <div class="hero-actions">
+                    <a href="/blog" class="button primary">Read the blog</a>
+                    <a
+                        href="https://github.com/mutorium"
+                        class="button secondary"
+                        target="_blank"
+                        rel="noreferrer"
+                    >
+                        Explore the tools
+                    </a>
+                </div>
             </section>
 
             <section class="section">
-                <h2>Published chapters</h2>
-                <ul>
+                <h2>Table of contents</h2>
+                <p class="muted">
+                    Each chapter is designed to be practical: minimal theory,
+                    concrete examples, exercises, and reusable patterns.
+                </p>
+            </section>
+
+            {
+                modules.map((m) => (
+                    <section class="section module" id={m.id}>
+                        <h3>{m.title}</h3>
+                        <p class="module-desc">{m.description}</p>
+
+                        <ol class="chapters">
+                            {m.chapters.map((ch) => (
+                                <li class="chapter">
+                                    <div class="chapter-row">
+                                        {ch.href ? (
+                                            <a href={ch.href}>{ch.title}</a>
+                                        ) : (
+                                            <span>{ch.title}</span>
+                                        )}
+
+                                        <span
+                                            class={`badge ${
+                                                ch.status === "published"
+                                                    ? "badge-published"
+                                                    : "badge-planned"
+                                            }`}
+                                            aria-label={statusLabel(ch.status)}
+                                            title={statusLabel(ch.status)}
+                                        >
+                                            {statusLabel(ch.status)}
+                                        </span>
+                                    </div>
+
+                                    {ch.note ? (
+                                        <p class="chapter-note">{ch.note}</p>
+                                    ) : null}
+                                </li>
+                            ))}
+                        </ol>
+                    </section>
+                ))
+            }
+
+            <section class="section">
+                <h2>How to read this book</h2>
+                <ul class="notes">
                     <li>
-                        <a href="/blog/what-is-mutation-testing/">
-                            What Is Mutation Testing?
-                        </a>
+                        Start with <strong>Module 0</strong> to learn how to interpret
+                        survivors and what to do next.
                     </li>
                     <li>
-                        <a href="/blog/swiss-cheese-model-of-web3/">
-                            Swiss Cheese Model of Web3 Security
-                        </a>
+                        Use <strong>Module 1</strong> to build a repeatable Rust workflow
+                        (local + CI).
+                    </li>
+                    <li>
+                        Use <strong>Module 2</strong> to apply mutation testing to
+                        Noir projects with zk-mutant.
                     </li>
                 </ul>
             </section>
         </main>
+
         <Footer />
+
+        <style>
+            .meta {
+                margin-top: 0.75rem;
+                font-size: 0.95rem;
+            }
+            .meta-link {
+                text-decoration: none;
+            }
+            .meta-sep {
+                margin: 0 0.4rem;
+                opacity: 0.6;
+            }
+            .muted {
+                opacity: 0.8;
+            }
+            .module {
+                margin-top: 2rem;
+            }
+            .module-desc {
+                margin-top: 0.5rem;
+                opacity: 0.85;
+            }
+            .chapters {
+                margin-top: 0.75rem;
+                padding-left: 1.25rem;
+            }
+            .chapter {
+                margin: 0.5rem 0;
+            }
+            .chapter-row {
+                display: flex;
+                align-items: baseline;
+                justify-content: space-between;
+                gap: 1rem;
+            }
+            .chapter-note {
+                margin: 0.35rem 0 0 0;
+                opacity: 0.8;
+                font-size: 0.95rem;
+            }
+            .badge {
+                font-size: 0.8rem;
+                padding: 0.15rem 0.5rem;
+                border-radius: 999px;
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                white-space: nowrap;
+                opacity: 0.9;
+            }
+            .badge-published {
+                border-color: rgba(0, 200, 120, 0.35);
+            }
+            .badge-planned {
+                border-color: rgba(200, 200, 200, 0.25);
+            }
+            .notes {
+                margin-top: 0.75rem;
+            }
+        </style>
     </body>
 </html>
