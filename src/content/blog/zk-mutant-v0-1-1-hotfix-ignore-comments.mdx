@@ -1,0 +1,100 @@
+---
+title: "zk-mutant v0.1.1 hotfix"
+description: "A breaking/noisy bug fix: zk-mutant no longer generates mutants from line and block comments."
+pubDate: "2026-01-08"
+updatedDate: "2026-01-08"
+tags: ["noir", "rust", "tooling", "mutation testing", "zk", "release"]
+draft: false
+heroImage: '../../assets/zk_mutant_announcement_v0.1.1.png'
+---
+
+`zk-mutant v0.1.1` is a small **hotfix release** for a breaking discovery bug: **comment text was being treated like code**, causing a mutant explosion from separator lines and “equations” inside comments.
+
+If you tried `zk-mutant` on real-world Noir projects and suddenly saw *dozens (or hundreds)* of irrelevant mutants from `// =====` lines or explanatory comments like `leaf != 0`, this release is for you.
+
+---
+
+## The bug
+
+In `v0.1.0`, mutation discovery scanned `.nr` source text for operators like:
+
+- `==` ↔ `!=`
+- `<` ↔ `>=`
+- `<=` ↔ `>`
+- `>=` ↔ `<`
+
+…but it didn’t ignore comment ranges, so any comment containing those characters could become a “mutation candidate”.
+
+Examples that (incorrectly) produced mutants:
+
+```noir
+// ===========================================================================
+// If pubkey IS in tree: leaf != 0, proof generation fails
+// If pubkey NOT in tree: leaf == 0, proof succeeds
+// Also: a <= b && c >= d || e == f
+// ===========================================================================
+
+/*
+Block comment too:
+leaf != 0
+leaf == 0
+*/
+```
+
+### Impact
+
+- **Noise / false positives** in reports
+- **Huge mutant counts** (wasting execution time and attention)
+- “Breaking” behavior in the sense that the tool becomes much less usable on real codebases with rich comments
+
+---
+
+## The fix in v0.1.1
+
+`zk-mutant v0.1.1` now **skips mutation candidates inside**:
+
+- line comments (`// ...`)
+- block comments (`/* ... */`)
+
+This is implemented via a lightweight comment-range scanner used during discovery, so operator mutation in real code behaves as before, while comment content is ignored.
+
+> This fix tracks comment ranges in a simple state machine that also avoids treating `//` inside strings as a comment opener.
+
+---
+
+## Upgrade
+
+If you installed `v0.1.0` via `cargo install`, upgrade like this:
+
+```bash
+cargo install zk-mutant --force
+```
+
+---
+
+## Verification / regression coverage
+
+This release includes regression coverage to ensure:
+
+- **comment-only inputs produce 0 mutants**
+- operators in actual code are still mutated as before
+
+GitHub tracking:
+
+- **Issue:** #1 — “Bug: Mutator generates mutants from comments”
+- **Release:** `v0.1.1` on GitHub
+
+---
+
+## What’s next
+
+`main` is continuing on the `0.2.0` line (alpha) while `release/0.1` exists as a maintenance branch for hotfixes like this.
+
+Next up on the product side: expanding operator sets, improving targeting/filtering, and running `zk-mutant` against more real Noir projects to learn where the tool is most useful (and where it’s noisy).
+
+---
+
+## Links
+
+- **Crate:** https://crates.io/crates/zk-mutant
+- **Source:** https://github.com/mutorium/zk-mutant
